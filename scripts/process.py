@@ -3,11 +3,10 @@ import argparse
 import numpy
 import sys
 from pathlib import Path
-import audiofile
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.fft import fft, fftfreq, rfft, rfftfreq
 from matplotlib.animation import FuncAnimation
+import librosa
 
 # This script is used to process music data in the FLAC file format, compute the FFT, and serialise it to
 # Protocol Buffers.
@@ -20,19 +19,17 @@ from matplotlib.animation import FuncAnimation
 # - https://www.youtube.com/watch?v=aQKX3mrDFoY
 
 # Number of samples that constitutes one spectrum block
-BLOCK_SIZE = 2048
+BLOCK_SIZE = 1024
 
 # Number of bars we want to draw
-NUM_BARS = 32
+NUM_BARS = 128
 
 # Human hearing range
 FREQ_MIN = 20 # 20 Hz
 FREQ_MAX = 20_000 # 20 KHz
 
-# 44100 KHz = 44100 samples per second
-# = 44.1 samples per millisecond
-
-# so if we want 10 milliseconds we should put 44.1 * 10 = 441
+# FFT window function in scipy.signal.get_window
+WINDOW = "blackmanharris"
 
 
 def main():
@@ -45,49 +42,42 @@ def main():
     print(f"Processing: {song_name} ({song_path})")
 
     # load audio
-    signal, sampling_rate = audiofile.read(song_path, always_2d=True)
+    signal, sampling_rate = librosa.load(song_path, sr=44100)
     print(f"sampling rate: {sampling_rate}")
     print(f"signal shape: {signal.shape}")
 
     # assume a stereo signal, let's mix it down to mono
-    mono = np.mean(signal, axis=0)
-    print(f"mono signal shape: {mono.shape}")
+    # mono = np.mean(signal, axis=0)
+    # print(f"mono signal shape: {mono.shape}")
 
-    # testing
-    # audiofile.write("/tmp/block.flac", mono[0:BLOCK_SIZE], sampling_rate)
+    # compute mel spectrogram
+    # PROBLEM: too short (only 128 entries). we need to go back to FFT.
+    spectrogram = librosa.feature.melspectrogram(y=signal, sr=sampling_rate, fmin=FREQ_MIN, fmax=FREQ_MAX,
+                                                 )#n_fft=BLOCK_SIZE)
+    # convert power spectrogram to decibels
+    db = librosa.power_to_db(spectrogram, ref=np.max)
+    # plt.plot(db[64])
+    # plt.show()
+    print(len(spectrogram))
 
-    # split signal into chunks of BLOCK_SIZE
-    blocks = np.split(mono, range(BLOCK_SIZE, len(mono), BLOCK_SIZE))
-    print(f"num blocks: {len(blocks)} block shape: {blocks[0].shape}")
-
-    # compute FFT for each block - we use rfft which is the real valued fft
-    # for block in blocks:
-    #     yf = rfft(block)
-    #     xf = rfftfreq(len(block), 1 / sampling_rate)
+    # fig, ax = plt.subplots(1, 1)
+    # fig.set_size_inches(5, 5)
     #
-    #     plt.hist(np.abs(yf), bins=NUM_BARS, range=[FREQ_MIN, FREQ_MAX])
-    #     plt.show()
+    # def animate(i):
+    #     ax.clear()
+    #     ax.plot(db[i])
+    # ani = FuncAnimation(fig, animate, frames=len(db), interval=100, repeat=False)
+    # plt.show()
 
-    fig, ax = plt.subplots(1, 1)
-    fig.set_size_inches(5, 5)
-
-    def animate(i):
-        ax.clear()
-        block = blocks[i]
-        yf = rfft(block)
-        xf = rfftfreq(len(block), 1 / sampling_rate)
-
-        # TODO so what we want to do is grab this log data and turn it into bars
-        plt.semilogx(xf, np.abs(yf))
-
-        # plt.hist(np.abs(yf), bins=NUM_BARS)
-        # plt.plot(xf, np.abs(yf))
-        # plt.scatter(xf, np.abs(yf))
-        # plt.title(f"frame {i}")
-
-    ani = FuncAnimation(fig, animate, frames=len(blocks), interval=30, repeat=False)
+    # plot
+    fig, ax = plt.subplots()
+    S_dB = librosa.power_to_db(spectrogram, ref=np.max)
+    img = librosa.display.specshow(S_dB, x_axis='time',
+                                   y_axis='mel', sr=sampling_rate,
+                                   fmax=8000, ax=ax)
+    fig.colorbar(img, ax=ax, format='%+2.0f dB')
+    ax.set(title='Mel-frequency spectrogram')
     plt.show()
-
 
 if __name__ == "__main__":
     main()

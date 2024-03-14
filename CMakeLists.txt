@@ -14,6 +14,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cpptrace)
 
+# cap'n proto
+# based on https://github.com/capnproto/capnproto/blob/v2/c%2B%2B/samples/CMakeLists.txt
+find_package(CapnProto CONFIG REQUIRED)
+capnp_generate_cpp(musicVisProtoSources musicVisProtoHeaders proto/MusicVis.capnp)
+
 add_executable(musicvis 
     src/main.cpp 
     src/gl.c
@@ -21,8 +26,11 @@ add_executable(musicvis
     src/mesh.cpp
     src/shader.cpp
     src/model.cpp
+    ${musicVisProtoSources}
+    ${musicVisProtoHeaders}
 )
 target_include_directories(musicvis PRIVATE include)
+target_link_libraries(musicvis CapnProto::capnp)
 
 # SDL2
 find_package(SDL2 REQUIRED)
@@ -34,6 +42,7 @@ find_package(spdlog REQUIRED)
 target_link_libraries(musicvis spdlog::spdlog)
 
 # assimp
+# FIXME may not be needed for major
 find_package(assimp REQUIRED)
 target_link_libraries(musicvis assimp::assimp)
 target_include_directories(musicvis PRIVATE ${ASSIMP_INCLUDE_DIRS})

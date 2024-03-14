@@ -13,8 +13,9 @@ You will need the following tools/libraries:
 - LLD
 - SDL2
 - glm
-- assimp
+- Assimp
 - spdlog
+- Cap'n Proto
 
 All the above dependencies are available on the AUR or main repos for Arch Linux. If you're using another
 distro, you may have to compile from source to get the newer versions (especially if on Ubuntu). If you're
