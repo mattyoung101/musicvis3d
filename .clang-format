@@ -1,0 +1,17 @@
+---
+BasedOnStyle: WebKit
+AllowShortFunctionsOnASingleLine: None
+ColumnLimit: '110'
+Cpp11BracedListStyle: 'false'
+IndentWidth: '4'
+SpaceAfterCStyleCast: 'true'
+TabWidth: '4'
+AllowShortEnumsOnASingleLine: false
+BreakBeforeBraces: Attach
+PointerAlignment: Right
+IndentCaseLabels: 'true'
+
+# glad is annoying, we have to do this so it doesn't #error us
+SortIncludes: false
+
+...

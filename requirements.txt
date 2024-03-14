@@ -1,0 +1,6 @@
+numpy
+audiofile
+protobuf
+matplotlib
+audplot
+scipy
