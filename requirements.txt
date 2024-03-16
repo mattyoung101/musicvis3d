@@ -1,7 +1,8 @@
 numpy
 audiofile
-protobuf
 matplotlib
 audplot
 scipy
 librosa
+spectrum
+pycapnp
