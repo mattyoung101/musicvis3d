@@ -6,3 +6,4 @@ scipy
 librosa
 spectrum
 pycapnp
+tqdm
