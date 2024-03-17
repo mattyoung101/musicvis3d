@@ -11,6 +11,8 @@ from matplotlib.animation import FuncAnimation
 import librosa
 from spectrum import Periodogram
 from spectrum import tools as stools
+import capnp
+from typing import List, Tuple
 
 # This script is used to process music data in the FLAC file format, compute the FFT, and serialise it to
 # Protocol Buffers.
@@ -32,10 +34,17 @@ NUM_BARS = 32
 FREQ_MIN = 20 # 20 Hz
 FREQ_MAX = 20_000 # 20 KHz
 
-# 44100 KHz = 44100 samples per second
-# = 44.1 samples per millisecond
+# Min/max volume in dB
+MIN_VOL = -80
+MAX_VOL = 0
 
-# so if we want 10 milliseconds we should put 44.1 * 10 = 441
+
+def filter_freqs(freqs: List[Tuple[float, float]], min: float, max: float) -> List[float]:
+    """
+    Filters a list of (frequency, amplitude) tuple pairs to make sure the frequency is
+    between min and max inclusive.
+    """
+    return [x[1] for x in freqs if x[0] >= min and x[0] <= max]
 
 
 def main():
@@ -82,21 +91,42 @@ def main():
         samples = np.geomspace(FREQ_MIN, FREQ_MAX, NUM_BARS)
 
         # convert power spectrum to dB
+        # source: https://github.com/cokelaer/spectrum/blob/master/src/spectrum/psd.py#L691 (given norm=True)
         db = 10 * stools.log10(p.psd / max(p.psd))
+
+        # Now we pair frequencies with their samples
+        pairs = [x for x in zip(p.frequencies(), db)]
+        # Finalised output bars
+        bars = []
+
+        # Sample bars using our samples array
+        prev = samples[0]
+        for cur in samples[1:]:
+            # Take the mean amplitude in this block
+            mean = np.mean(filter_freqs(pairs, prev, cur))
+            # Map range MIN_VOL..MAX_VOL dB to 0..255 (where 0=MIN_DB dB; 255=MAX_DB dB)
+            val = numpy.interp(mean, [MIN_VOL, MAX_VOL], [0, 255])
+            bars.append(val)
+            # Move along to the next sample
+            prev = cur
+            #print(f"Sampling bar from {prev}..{cur} dB: {mean} val: {val}")
+
+        # Idiotic method to handle the final case (cur..FREQ_MAX) (FIXME this is stupid)
+        mean = np.mean(filter_freqs(pairs, cur, FREQ_MAX))
+        val = numpy.interp(mean, [MIN_VOL, MAX_VOL], [0, 255])
+        bars.append(val)
         
-        # plot
-        #p.plot(ylim=[-60, 10])
-        plt.semilogx(p.frequencies(), db)
-        ax.set_ylim([-80, 10]) # basically 0 to -80 dB
+        # plot spectrum
+        # p.plot(ylim=[-60, 10])
+        # plt.semilogx(p.frequencies(), db)
+        # ax.set_ylim([-80, 10]) # basically 0 to -80 dB
 
         # draw marks where we would sample
-        for sample in samples:
-            plt.axvline(x=sample, color="grey")
+        # for sample in samples:
+        #     plt.axvline(x=sample, color="grey")
 
-        # plt.hist(np.abs(yf), bins=NUM_BARS)
-        # plt.plot(xf, np.abs(yf))
-        # plt.scatter(xf, np.abs(yf))
-        # plt.title(f"frame {i}")
+        # plot bar graph (final)
+        plt.bar(x=range(NUM_BARS), height=bars)
 
     ani = FuncAnimation(fig, animate, frames=len(blocks), interval=30, repeat=False)
     plt.show()
