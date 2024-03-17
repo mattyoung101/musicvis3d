@@ -10,6 +10,7 @@ from spectrum import tools as stools
 import capnp
 from typing import List, Tuple
 from tqdm import tqdm
+import scipy
 
 # This script is used to process music data in the FLAC file format, compute the spectrogram, and serialise 
 # it to Cap'n Proto for the C++ side.
@@ -35,11 +36,14 @@ NUM_BARS = 32
 FREQ_MIN = 20
 FREQ_MAX = 20_000
 
-# Min/max volume in dB
+# Min/max volume in dBFS
 MIN_VOL = -80
 MAX_VOL = 0
 
-PLOT = True
+# TODO make these command line args, this is stupid
+PLOT = False
+PLOT_FFT = False
+PLOT_BAR = False
 
 
 def filter_freqs(freqs: List[Tuple[float, float]], min: float, max: float) -> List[float]:
@@ -50,7 +54,7 @@ def filter_freqs(freqs: List[Tuple[float, float]], min: float, max: float) -> Li
     return [x[1] for x in freqs if x[0] >= min and x[0] <= max]
 
 
-def process_block(block: np.ndarray, sampling_rate: int) -> List[int]:
+def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> List[int]:
     """
     Processes a block of audio samples into a bar spectrogram.
     The output bars are in the range 0..255 and can be fed into the visualiser directly.
@@ -60,21 +64,22 @@ def process_block(block: np.ndarray, sampling_rate: int) -> List[int]:
     p.run()
 
     # apply perceptual weighting (make the graph look like how it would sound, I guess)
-    # FIXME doesn't work
-    # weighted = librosa.A_weighting(db)
+    # weighted = librosa.A_weighting(db) # FIXME doesn't work
 
     # we want to sample along yf logarithmically, just like it's graphed
-    samples = np.geomspace(FREQ_MIN, FREQ_MAX, NUM_BARS)
+    # This used to be logarithmic sampling using np.geomspace, but the problem is that it seems like the
+    # results from both scipy.signal.periodogram and spectrum.py's Periodogram, the frequencies, are _already_
+    # logarithmically distributed. so the linear sampling actually ends up looking OK? I'm not sure if this is
+    # correct or not though.
+    # TODO verify this is what we want
+    samples = np.linspace(FREQ_MIN, FREQ_MAX, NUM_BARS)
 
     # convert power spectrum to dB
     # source: https://github.com/cokelaer/spectrum/blob/master/src/spectrum/psd.py#L691 (given norm=True)
     db = 10 * stools.log10(p.psd / max(p.psd))
-    assert len(db) == len(p.psd)
-    #print(f"Freqs: {p.frequencies()}")
 
     # Now we pair frequencies with their samples
     pairs = [x for x in zip(p.frequencies(), db)]
-    # print(f"Spectrogram: {pairs}")
 
     # Finalised output bars
     bars = []
@@ -109,13 +114,13 @@ def process_block(block: np.ndarray, sampling_rate: int) -> List[int]:
         bars.append(val)
 
     # plot spectrum
-    # p.plot(ylim=[-60, 10])
-    # plt.semilogx(p.frequencies(), db)
-    # ax.set_ylim([-80, 10]) # basically 0 to -80 dB
+    if PLOT and PLOT_FFT:
+        plt.semilogx(p.frequencies(), db)
+        ax.set_ylim([-80, 10]) # basically 0 to -80 dB
 
-    # draw marks where we would sample
-    # for sample in samples:
-    #     plt.axvline(x=sample, color="grey")
+        # draw marks where we would sample
+        for sample in samples:
+            plt.axvline(x=sample, color="grey")
 
     return [int(x) for x in bars]
 
@@ -124,6 +129,9 @@ def main():
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} song_name")
         exit(1)
+
+    if PLOT:
+        assert PLOT_FFT ^ PLOT_BAR, "PLOT_FFT and PLOT_BAR are mutually exclusive"
 
     song_name = sys.argv[1]
     song_path = Path(f"data/songs/{song_name}/audio.flac")
@@ -154,6 +162,23 @@ def main():
     music_vis.sampleRate = sampling_rate
     music_vis.blockSize = BLOCK_SIZE
 
+    if PLOT:
+        fig, ax = plt.subplots(1, 1)
+        fig.set_size_inches(5, 5)
+
+        def animate(i):
+            ax.clear()
+            bars = process_block(blocks[i], sampling_rate, ax)
+            
+            if PLOT and PLOT_BAR:
+                # plot bar graph (final)
+                plt.bar(x=range(NUM_BARS), height=bars)
+                ax.set_ylim([0, 255])
+
+        ani = FuncAnimation(fig, animate, frames=len(blocks), interval=30, repeat=False)
+        plt.show()
+        exit(0)
+
     # process blocks
     all_bars = []
     for i, block in tqdm(enumerate(blocks), total=len(blocks)):
@@ -172,21 +197,6 @@ def main():
     f.flush()
     f.close()
     print("Done!")
-
-    if PLOT:
-        fig, ax = plt.subplots(1, 1)
-        fig.set_size_inches(5, 5)
-
-        def animate(i):
-            ax.clear()
-            bars = all_bars[i]
-
-            # plot bar graph (final)
-            plt.bar(x=range(NUM_BARS), height=bars)
-            ax.set_ylim([0, 255])
-
-        ani = FuncAnimation(fig, animate, frames=len(blocks), interval=30, repeat=False)
-        plt.show()
 
 
 if __name__ == "__main__":
