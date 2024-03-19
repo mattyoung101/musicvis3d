@@ -12,6 +12,7 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <spdlog/spdlog.h>
 #include <cpptrace/cpptrace.hpp>
+#include "cosc/song_data.hpp"
 
 static constexpr int WIDTH = 1600;
 static constexpr int HEIGHT = 900;

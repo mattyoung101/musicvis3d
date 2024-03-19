@@ -26,11 +26,12 @@ add_executable(musicvis
     src/mesh.cpp
     src/shader.cpp
     src/model.cpp
+    src/dr_flac.c
     ${musicVisProtoSources}
-    ${musicVisProtoHeaders}
 )
-target_include_directories(musicvis PRIVATE include)
+target_include_directories(musicvis PRIVATE include ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(musicvis CapnProto::capnp)
+message(STATUS "MUsic vis headers: ${musicVisProtoHeaders}")
 
 # SDL2
 find_package(SDL2 REQUIRED)

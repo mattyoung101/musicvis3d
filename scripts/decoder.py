@@ -29,7 +29,8 @@ def main():
     for i, block in enumerate(music_vis.blocks):
         print(f"Block {i}: {block}")
 
-    print(f"Num bars: {music_vis.numBars}\nSample rate: {music_vis.sampleRate}\nBlock size: {music_vis.blockSize}")
+    print(f"Num bars: {music_vis.numBars}\nSample rate: {music_vis.sampleRate} Hz\nBlock size: "
+          f"{music_vis.blockSize} samples")
 
     # Ok, **now** we should be able to close the bastard. Pray we don't get a bad fd error.
     f.close()

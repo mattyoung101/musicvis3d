@@ -41,13 +41,28 @@ First, make a new directory in `data/songs`, for example, `mkdir data/songs/Band
 
 Your song needs to be available as a FLAC file. Copy this into `data/songs/Band_Name_Song_Name/audio.flac`.
 
-Activate a virtual environment and run the process script:
+Finally, you can activate the virtual environment and run the process script:
 
 ```
 python -m venv env
 source env/bin/activate.fish
 pip install -r requirements.txt
-./process.py Band_Name_Song_Name
+./scripts/process.py Band_Name_Song_Name
 ```
 
-This will then write the `spectrum.dat` file.
+This will then write the `spectrum.bin` file in the Cap'n Proto format.
+
+To double check this worked, run `./scripts/decoder.py Band_Name_Song_Name`. This will load the capnp message
+in `spectrum.bin` and display it.
+
+## Libraries used
+This project makes use of the following open-source libraries:
+
+- SDL2
+- glm
+- Assimp
+- spdlog
+- Cap'n Proto: MIT licence
+- dr_flac: Public domain
+
+## Licence

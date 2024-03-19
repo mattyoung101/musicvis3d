@@ -60,6 +60,7 @@ def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> List[int]:
     The output bars are in the range 0..255 and can be fed into the visualiser directly.
     """
     # compute periodogram using kaiser windowing function
+    # TODO go back to scipy (see obsidian) so we can do DC removal??
     p = Periodogram(block, sampling=sampling_rate, window="kaiser")
     p.run()
 
@@ -76,6 +77,7 @@ def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> List[int]:
 
     # convert power spectrum to dB
     # source: https://github.com/cokelaer/spectrum/blob/master/src/spectrum/psd.py#L691 (given norm=True)
+    # and we use stools.log10 not np.log10 since it has a little bit of code to handle NaNs correctly
     db = 10 * stools.log10(p.psd / max(p.psd))
 
     # Now we pair frequencies with their samples
