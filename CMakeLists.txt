@@ -27,6 +27,7 @@ add_executable(musicvis
     src/shader.cpp
     src/model.cpp
     src/dr_flac.c
+    src/song_data.cpp
     ${musicVisProtoSources}
 )
 target_include_directories(musicvis PRIVATE include ${CMAKE_CURRENT_BINARY_DIR})

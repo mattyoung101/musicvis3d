@@ -8,6 +8,7 @@
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_mouse.h>
+#include <SDL_audio.h>
 #include <chrono>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <spdlog/spdlog.h>
@@ -24,22 +25,50 @@ float delta;
 //// Total elapsed time (seconds)
 float deltaSum;
 
+static void audio_callback(void *userData, uint8_t *stream, int len) {
+    cosc::SongData *songData = static_cast<cosc::SongData*>(userData);
+    songData->mixAudio(stream, len);
+}
+
 int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::debug);
     SPDLOG_INFO("COSC3000 Major Project (Computer Graphics) - Matt Young, 2024");
 
-    if (argc < 2) {
-        SPDLOG_ERROR("Usage: {} <DATA_DIR_PATH>", argv[0]);
+    if (argc < 3) {
+        SPDLOG_ERROR("Usage: {} [data_dir_path] [song_name]", argv[0]);
         return 1;
     }
     std::string dataDir = argv[1];
+    std::string songName = argv[2];
 
     SPDLOG_INFO("Data dir: {}", dataDir);
+    SPDLOG_INFO("Song name: {}", songName);
+
+    // load song data
+    cosc::SongData songData(dataDir, songName);
 
     // init SDL2
     SPDLOG_DEBUG("Initialising SDL2");
-    if (SDL_Init(SDL_INIT_VIDEO) == -1) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == -1) {
         SPDLOG_ERROR("Failed to init SDL: {}", SDL_GetError());
+        return 1;
+    }
+
+    // open audio, reference: https://www.libsdl.org/release/SDL-1.2.15/docs/html/guideaudioexamples.html
+    SDL_AudioSpec audioSpec = {
+        .freq = static_cast<int>(songData.spectrum.getSampleRate()),
+        .format = AUDIO_S32,
+        .channels = 2,
+        // we could make this the spectrum block size, but we have to be conscious of audio latency
+        .samples = 1024,
+        .callback = audio_callback,
+        .userdata = static_cast<void*>(&songData),
+    };
+    SDL_AudioSpec obtained;
+
+    int audioDevice = SDL_OpenAudioDevice(nullptr, 0, &audioSpec, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
+    if (audioDevice < 0) {
+        SPDLOG_ERROR("Failed to initialise SDL audio: {}", SDL_GetError());
         return 1;
     }
 
@@ -90,6 +119,10 @@ int main(int argc, char *argv[]) {
     // note this is different from SDL_CaptureMouse though, but we are emulating the behaviour of what, for
     // example, libgDX would call "capture mouse"
     SDL_SetRelativeMouseMode(SDL_TRUE);
+    
+    // setup song data audio stream - after this, audio should be good to go
+    songData.setupAudio(audioSpec.format, obtained.format);
+    SDL_PauseAudioDevice(audioDevice, 0);
 
     bool shouldQuit = false;
     while (!shouldQuit) {
@@ -139,7 +172,9 @@ int main(int argc, char *argv[]) {
     SPDLOG_DEBUG("Quitting");
     SDL_DestroyWindow(window);
     SDL_GL_DeleteContext(context);
+    SDL_CloseAudio();
     SDL_VideoQuit();
+    SDL_AudioQuit();
     SDL_Quit();
 
     return 0;
