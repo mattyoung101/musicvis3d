@@ -40,8 +40,6 @@ cosc::SongData::SongData(const std::string &dataDir, const std::string &songName
     SPDLOG_DEBUG("Audio len: {} samples", audioLen);
 
     // load spectrum data with capnp
-    // FIXME: MOVE these into a MallocMessageBuilder so that capnp stops blowing up
-    // see: https://capnproto.org/cxx.html (Security Tips)
     SPDLOG_DEBUG("Opening spectrum fd");
     fd = open(spectrumFile.c_str(), O_RDONLY);
     if (fd == -1) {
@@ -50,11 +48,25 @@ cosc::SongData::SongData(const std::string &dataDir, const std::string &songName
     }
 
     SPDLOG_DEBUG("Decoding capnp message");
-    // this is only a unique_ptr to keep it alive and since they are annoying and disabled copy&move
-    // there's probably a better way to do this but seriously do you know how many assignments I have rn???
-    message = std::make_unique<::capnp::PackedFdMessageReader>(fd);
-    spectrum = message->getRoot<MusicVisBars>();
+    // this is only a unique_ptr to keep it alive throughout the class, since capnp is a bit annoying and 
+    // disabled copy&move.
+    // there's probably a better way to do this. too bad!
+    reader = std::make_unique<::capnp::PackedFdMessageReader>(fd);
 
+    // By default capnp implements a "traversal limit", which is a "security feature" designed to prevent DoS
+    // attacks caused by infinite traversal. Because we keep traversing the message in the mixAudio()
+    // callback, it gets mad at us and throws an exception.
+    // As noted in the documentation (https://capnproto.org/cxx.html#security-tips), we get around this by
+    // copying the message into a MallocMessageBuilder and then using that.
+    // 
+    // For something so "simple", according to capnp, this is EXTREMELY POORLY DOCUMENTED and took a full day
+    // of research to understand!! I would NOT be using capnp again (really the only reason is that it has a
+    // treesitter extension and flatbuffers doesn't...). Did you know capnp has NO API DOCS AT ALL? Yes,
+    // actually, not even auto-generated API docs, there is literally ZERO documentation outside the linked
+    // page. At least it's fast.
+    message.setRoot(reader->getRoot<MusicVisBars>());
+    spectrum = message.getRoot<MusicVisBars>();
+    
     SPDLOG_INFO("===== Decoded spectrum data =====");
     SPDLOG_INFO("Num bars: {}", spectrum.getNumBars());
     SPDLOG_INFO("Sample rate: {} Hz", spectrum.getSampleRate());
@@ -97,10 +109,8 @@ void cosc::SongData::mixAudio(uint8_t *stream, int len) {
 
 cosc::SongData::~SongData() {
     SPDLOG_DEBUG("Closing spectrum fd");
-    // Because cap'n proto is stupid, we have to keep the fd alive for the duration of the entire application.
-    // Since this ~SongData() destructor gets called and we free the fd **before** we the message unique_ptr
-    // destructor runs, we have to dispose it here **manually**, then hopefully it'll quit being mad at us.
-    message.reset();
+    // manually delete the reader, so that when we close fd it won't get upset at us
+    reader.reset();
     close(fd);
     SDL_FreeAudioStream(audioStream);
     drflac_free(audio, nullptr);

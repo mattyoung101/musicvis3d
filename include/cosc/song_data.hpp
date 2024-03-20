@@ -15,8 +15,9 @@ public:
     /// Song name
     std::string name;
     
-    /// Cap'n Proto serialised spectrum bars
+    /// Deserialised music vis spectrum data
     MusicVisBars::Reader spectrum;
+
     
     /**
      * Load song data. This will both load the FLAC file and the Cap'n Proto serialised spectrum.
@@ -42,8 +43,13 @@ public:
     size_t blockPos = 0;
 
 private:
-    std::unique_ptr<::capnp::PackedFdMessageReader> message;
+    /// Capnp message reader
+    std::unique_ptr<::capnp::PackedFdMessageReader> reader;
+    /// Cap'n Proto serialised spectrum bars
+    ::capnp::MallocMessageBuilder message;
+    /// Capnp file FD
     int fd = -1;
+
     unsigned int channels;
     unsigned int sampleRate;
     drflac_int32 *audio;
