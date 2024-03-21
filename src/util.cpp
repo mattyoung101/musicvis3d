@@ -1,5 +1,4 @@
 #include "cosc/util.hpp"
-#include <cpptrace/cpptrace.hpp>
 #include <fstream>
 #include <spdlog/spdlog.h>
 #include <filesystem>

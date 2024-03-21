@@ -171,7 +171,7 @@ def main():
         def animate(i):
             ax.clear()
             bars = process_block(blocks[i], sampling_rate, ax)
-            
+
             if PLOT and PLOT_BAR:
                 # plot bar graph (final)
                 plt.bar(x=range(NUM_BARS), height=bars)
@@ -194,10 +194,8 @@ def main():
     # write capnp message
     data_path = Path(f"data/songs/{song_name}/spectrum.bin")
     print(f"Writing capnp message to {data_path}")
-    f = open(data_path, "w+b")
-    music_vis.write_packed(f)
-    f.flush()
-    f.close()
+    with open(data_path, "w+b") as f:
+        music_vis.write_packed(f)
     print("Done!")
 
 

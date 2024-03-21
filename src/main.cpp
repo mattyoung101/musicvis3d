@@ -12,7 +12,6 @@
 #include <chrono>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <spdlog/spdlog.h>
-#include <cpptrace/cpptrace.hpp>
 #include "cosc/song_data.hpp"
 
 static constexpr int WIDTH = 1600;
@@ -26,7 +25,7 @@ float delta;
 float deltaSum;
 
 static void audio_callback(void *userData, uint8_t *stream, int len) {
-    cosc::SongData *songData = static_cast<cosc::SongData*>(userData);
+    cosc::SongData *songData = static_cast<cosc::SongData *>(userData);
     songData->mixAudio(stream, len);
 }
 
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
         // we could make this the spectrum block size, but we have to be conscious of audio latency
         .samples = 1024,
         .callback = audio_callback,
-        .userdata = static_cast<void*>(&songData),
+        .userdata = static_cast<void *>(&songData),
     };
     SDL_AudioSpec obtained;
 
@@ -71,6 +70,8 @@ int main(int argc, char *argv[]) {
         SPDLOG_ERROR("Failed to initialise SDL audio: {}", SDL_GetError());
         return 1;
     }
+    SPDLOG_INFO("Obtained audio config with freq {} Hz, format {}, channels {}, samples {}", obtained.freq,
+        obtained.format, obtained.channels, obtained.samples);
 
     // request OpenGL 4.5, double buffering, and a depth buffer
     // source: https://news.ycombinator.com/item?id=6204597
@@ -119,7 +120,7 @@ int main(int argc, char *argv[]) {
     // note this is different from SDL_CaptureMouse though, but we are emulating the behaviour of what, for
     // example, libgDX would call "capture mouse"
     SDL_SetRelativeMouseMode(SDL_TRUE);
-    
+
     // setup song data audio stream - after this, audio should be good to go
     songData.setupAudio(audioSpec.format, obtained.format);
     SDL_PauseAudioDevice(audioDevice, 0);

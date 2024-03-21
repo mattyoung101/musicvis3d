@@ -1,6 +1,6 @@
 #include "cosc/shader.hpp"
 #include "cosc/util.hpp"
-#include <cpptrace/cpptrace.hpp>
+#include <exception>
 #include <filesystem>
 #include <spdlog/spdlog.h>
 #include "glad/gl.h"
@@ -29,7 +29,7 @@ cosc::Shader::Shader(const std::string &vertexPath, const std::string &fragmentP
     if (!success) {
         glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
         SPDLOG_ERROR("Failed to compile vertex shader!\n{}", infoLog);
-        throw cpptrace::runtime_error("Vertex shader compile failed");
+        throw std::exception();
     }
 
     // setup fragment shader
@@ -40,7 +40,7 @@ cosc::Shader::Shader(const std::string &vertexPath, const std::string &fragmentP
     if (!success) {
         glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
         SPDLOG_ERROR("Failed to compile frag shader!\n{}", infoLog);
-        throw cpptrace::runtime_error("Fragment shader compile failed");
+        throw std::exception();
     }
 
     // link shaders
@@ -52,7 +52,7 @@ cosc::Shader::Shader(const std::string &vertexPath, const std::string &fragmentP
     if (!success) {
         glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
         SPDLOG_ERROR("Failed to link shaders!\n{}", infoLog);
-        throw cpptrace::runtime_error("Shader link failed");
+        throw std::exception();
     }
 
     // free unused shader memory

@@ -5,15 +5,6 @@ set(CMAKE_C_STANDARD 11) # C11
 set(CMAKE_CXX_STANDARD 20) # C++20
 Set(FETCHCONTENT_QUIET FALSE)
 
-include(FetchContent)
-FetchContent_Declare(
-  cpptrace
-  GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
-  GIT_TAG        v0.4.0
-  GIT_PROGRESS   TRUE
-)
-FetchContent_MakeAvailable(cpptrace)
-
 # cap'n proto
 # based on https://github.com/capnproto/capnproto/blob/v2/c%2B%2B/samples/CMakeLists.txt
 find_package(CapnProto CONFIG REQUIRED)
@@ -32,7 +23,7 @@ add_executable(musicvis
 )
 target_include_directories(musicvis PRIVATE include ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(musicvis CapnProto::capnp)
-message(STATUS "MUsic vis headers: ${musicVisProtoHeaders}")
+message(STATUS "Music vis headers: ${musicVisProtoHeaders}")
 
 # SDL2
 find_package(SDL2 REQUIRED)
@@ -53,9 +44,6 @@ target_include_directories(musicvis PRIVATE ${ASSIMP_INCLUDE_DIRS})
 find_package(glm REQUIRED)
 target_link_libraries(musicvis glm::glm)
 target_include_directories(musicvis PRIVATE ${GLM_INCLUDE_DIRS})
-
-# cpptrace
-target_link_libraries(musicvis cpptrace::cpptrace)
 
 target_compile_options(musicvis PRIVATE "-Wall" "-Wextra" "-Wno-unused-parameter" "-ggdb")
 target_compile_options(musicvis PRIVATE "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE")

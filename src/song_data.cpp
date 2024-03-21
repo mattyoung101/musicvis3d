@@ -1,6 +1,5 @@
 #include "cosc/song_data.hpp"
 #include <SDL2/SDL_audio.h>
-#include <cpptrace/cpptrace.hpp>
 #include <cstring>
 #include <filesystem>
 #include <spdlog/spdlog.h>
@@ -19,11 +18,11 @@ cosc::SongData::SongData(const std::string &dataDir, const std::string &songName
 
     if (!fs::exists(flacFile)) {
         SPDLOG_ERROR("FLAC file does not exist! Tried: {}", flacFile.string());
-        throw cpptrace::runtime_error("FLAC file not found");
+        throw std::exception();
     }
     if (!fs::exists(spectrumFile)) {
         SPDLOG_ERROR("Spectrum data does not exist! Tried: {}", spectrumFile.string());
-        throw cpptrace::runtime_error("Spectrum file not found");
+        throw std::exception();
     }
 
     SPDLOG_INFO("FLAC file: {}", flacFile.string());
@@ -35,7 +34,7 @@ cosc::SongData::SongData(const std::string &dataDir, const std::string &songName
         flacFile.c_str(), &channels, &sampleRate, &audioLen, nullptr);
     if (audio == nullptr) {
         // Failed to open and decode FLAC file.
-        throw cpptrace::runtime_error("Failed to decode FLAC file");
+        throw std::runtime_error("Failed to decode FLAC file");
     }
     SPDLOG_DEBUG("Audio len: {} samples", audioLen);
 
@@ -44,11 +43,11 @@ cosc::SongData::SongData(const std::string &dataDir, const std::string &songName
     fd = open(spectrumFile.c_str(), O_RDONLY);
     if (fd == -1) {
         SPDLOG_ERROR("Failed to open() spectrum data: {}", strerror(errno));
-        throw cpptrace::runtime_error("Failed to open spectrum data");
+        throw std::exception();
     }
 
     SPDLOG_DEBUG("Decoding capnp message");
-    // this is only a unique_ptr to keep it alive throughout the class, since capnp is a bit annoying and 
+    // this is only a unique_ptr to keep it alive throughout the class, since capnp is a bit annoying and
     // disabled copy&move.
     // there's probably a better way to do this. too bad!
     reader = std::make_unique<::capnp::PackedFdMessageReader>(fd);
@@ -58,7 +57,7 @@ cosc::SongData::SongData(const std::string &dataDir, const std::string &songName
     // callback, it gets mad at us and throws an exception.
     // As noted in the documentation (https://capnproto.org/cxx.html#security-tips), we get around this by
     // copying the message into a MallocMessageBuilder and then using that.
-    // 
+    //
     // For something so "simple", according to capnp, this is EXTREMELY POORLY DOCUMENTED and took a full day
     // of research to understand!! I would NOT be using capnp again (really the only reason is that it has a
     // treesitter extension and flatbuffers doesn't...). Did you know capnp has NO API DOCS AT ALL? Yes,
@@ -66,7 +65,7 @@ cosc::SongData::SongData(const std::string &dataDir, const std::string &songName
     // page. At least it's fast.
     message.setRoot(reader->getRoot<MusicVisBars>());
     spectrum = message.getRoot<MusicVisBars>();
-    
+
     SPDLOG_INFO("===== Decoded spectrum data =====");
     SPDLOG_INFO("Num bars: {}", spectrum.getNumBars());
     SPDLOG_INFO("Sample rate: {} Hz", spectrum.getSampleRate());
@@ -91,20 +90,22 @@ void cosc::SongData::mixAudio(uint8_t *stream, int len) {
     if (len == 0) {
         // this should be OK as long as the song is actually finished - SDL requires us to fill the buffer
         // even if the song is done
-        //SPDLOG_WARN("Writing zero bytes to audio stream! Glitch will occur! len: {}, maxInStream: {}", len, maxInStream);
+        // SPDLOG_WARN("Writing zero bytes to audio stream! Glitch will occur! len: {}, maxInStream: {}", len,
+        // maxInStream);
         std::memset(stream, 0, len);
         return;
     }
-    
+
     // send data to the sound driver
     SDL_AudioStreamGet(audioStream, stream, len);
-    
+
     // we are given len in bytes, and since if we have sint16 samples, we just divide by the sizeof(sint16)
     // this may also require a divide by channels?
     audioPos += len / 2 / sizeof(int16_t);
     // and the block position should then be that divided by the block size
     blockPos = audioPos / spectrum.getBlockSize();
-    SPDLOG_DEBUG("Sample position: {}, Block position: {}/{}", audioPos, blockPos, spectrum.getBlocks().size());
+    SPDLOG_DEBUG("Sample position: {}/{}, Block position: {}/{}", audioPos, audioLen, blockPos,
+        spectrum.getBlocks().size());
 }
 
 cosc::SongData::~SongData() {
