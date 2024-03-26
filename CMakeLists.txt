@@ -23,6 +23,7 @@ add_executable(musicvis
 )
 target_include_directories(musicvis PRIVATE include ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(musicvis CapnProto::capnp)
+target_compile_definitions(musicvis PRIVATE "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE")
 message(STATUS "Music vis headers: ${musicVisProtoHeaders}")
 
 # SDL2

@@ -1,0 +1,16 @@
+LATEXMK_COMMAND := "latexmk -shell-escape -pdf -quiet"
+
+default:
+	@just --list
+
+# Generates all papers
+papers: major
+
+# Watches for edits to LaTeX and auto re-generates them
+# Based on: https://superuser.com/a/665208
+watch:
+    find . -name '*.tex' | entr just papers
+
+# Generates major project paper from LaTeX
+major:
+    {{LATEXMK_COMMAND}} major.tex

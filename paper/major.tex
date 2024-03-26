@@ -1,0 +1,103 @@
+\documentclass[11pt]{article}
+% fix quotes: https://tex.stackexchange.com/a/52353
+\usepackage[english]{babel}
+\usepackage{hyperref} % URLS
+\usepackage{graphicx} % images
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{minted}
+\usepackage{float}
+ % no indent
+\usepackage{parskip}
+\usepackage[autostyle]{csquotes}
+\usepackage{helvet}
+% so we can stop latex hyphenating over new lines
+%\usepackage[none]{hyphenat}
+%\renewcommand{\familydefault}{\sfdefault}
+
+% https://www.overleaf.com/learn/latex/Page_size_and_margins
+\usepackage{geometry}
+\geometry{
+	a4paper,
+	total={170mm,257mm},
+	left=20mm,
+	top=20mm,
+}
+
+% package instantiation
+\MakeOuterQuote{"}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	filecolor=magenta,
+	urlcolor=cyan,
+	citecolor=cyan,
+}
+
+% bibliography
+% https://tex.stackexchange.com/questions/51434/biblatex-citation-order
+% https://www.reddit.com/r/LaTeX/comments/k8tz0q/citation_in_wrong_numerical_order/
+\usepackage[
+    backend=biber,
+    natbib=true,
+    style=numeric,
+    sorting=none
+]{biblatex}
+% \addbibresource{graphics.bib}
+
+% opening
+\title{\textbf{A 3D music visualisation in OpenGL using the Discrete Fourier Transform}}
+\author{Matt Young \\ s4697249 \\ m.young2@uqconnect.edu.au}
+\date{March 2024}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+    Constructing computer graphics from music has important implications in the field of live entertainment.
+    The Discrete Fourier Transform (DFT), often computed via the Fast Fourier Transform (FFT), is the typical
+    method to convert time domain audio signals to a frequency domain spectrum. With this spectral data comes
+    an almost unlimited number of ways to interpret it and construct a visualisation. In this paper, I
+    investigate applying the DFT to construct a semi real-time audio visualisation using OpenGL. The
+    visualisation consists of offline spectral data that is rendered in real-time in the form of "bars" with
+    emissive lighting, and a set of pre-programmed camera moves computed via spherical linear interpolation.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+
+\section{Methodology}
+\subsection{Toolchain and environment}
+The visualiser itself is developed and tested in a Linux environment, and is split into two sub-applications:
+the visualiser itself, and the analysis script. Signal processing is a very complex subject, and real-time
+("online") signal processing is even more so. Python generally has simpler tools to address signal processing
+problems, such as NumPy and SciPy, so the signal processing part was moved offline into a Python script.
+
+The visualiser is what we see on the screen, the real-time rendering system that displays the bars, once the
+spectral data has been computed. It is written in C++20 using OpenGL, and is built using industry standard
+tools CMake, Ninja and the Clang compiler. It uses a number of open-source libraries:
+\begin{itemize}
+	\item SDL2: Platform window management, keyboard/mouse inputs, OpenGL context creation
+	\item glad: For OpenGL function loading and feature queries
+    \item glm: The OpenGL maths library, used for computing transforms and its matrix/vector types
+    \item Cap'n Proto: An extremely fast data serialisation format, used to transport data between Python and
+        C++.
+\end{itemize}
+
+The analysis script is written in Python, and computes the spectral data itself. It takes a FLAC file, and
+computes the spectral data necessary to render the bars. It also uses a number of open source libraries:
+\begin{itemize}
+    \item NumPy
+    \item SciPy
+    \item spectrum.py
+    \item Cap'n Proto
+\end{itemize}
+
+\subsection{Signal processing}
+
+\section{References}
+\printbibliography[heading=none]
+
+\end{document}
