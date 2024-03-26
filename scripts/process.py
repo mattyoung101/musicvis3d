@@ -152,6 +152,7 @@ def main():
     # assume a stereo signal, let's mix it down to mono
     mono = np.mean(signal, axis=0)
     print(f"mono signal shape: {mono.shape}")
+    print(f"num samples: {len(mono)}")
     # audiofile.write("/tmp/block.flac", mono[0:BLOCK_SIZE], sampling_rate)
 
     # split signal into chunks of BLOCK_SIZE

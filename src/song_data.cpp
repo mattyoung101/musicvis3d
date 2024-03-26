@@ -101,11 +101,12 @@ void cosc::SongData::mixAudio(uint8_t *stream, int len) {
 
     // we are given len in bytes, and since if we have sint16 samples, we just divide by the sizeof(sint16)
     // this may also require a divide by channels?
-    audioPos += len / 2 / sizeof(int16_t);
+    audioPos += len / sizeof(int32_t) / channels;
     // and the block position should then be that divided by the block size
     blockPos = audioPos / spectrum.getBlockSize();
-    SPDLOG_DEBUG("Sample position: {}/{}, Block position: {}/{}", audioPos, audioLen, blockPos,
-        spectrum.getBlocks().size());
+    SPDLOG_DEBUG("Sample position: {}/{} ({:.2f}%), Block position: {}/{}", audioPos, audioLen,
+                 (static_cast<double>(audioPos) / static_cast<double>(audioLen)) * 100.f, blockPos,
+                 spectrum.getBlocks().size());
 }
 
 cosc::SongData::~SongData() {

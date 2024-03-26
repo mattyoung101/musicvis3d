@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
         .format = AUDIO_S32,
         .channels = 2,
         // we could make this the spectrum block size, but we have to be conscious of audio latency
-        .samples = 1024,
+        .samples = 128,
         .callback = audio_callback,
         .userdata = static_cast<void *>(&songData),
     };
