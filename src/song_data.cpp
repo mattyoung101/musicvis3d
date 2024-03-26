@@ -1,5 +1,6 @@
 #include "cosc/song_data.hpp"
 #include <SDL2/SDL_audio.h>
+#include <chrono>
 #include <cstring>
 #include <filesystem>
 #include <spdlog/spdlog.h>
@@ -7,6 +8,7 @@
 #include <capnp/serialize-packed.h>
 #include "cosc/lib/dr_flac.h"
 #include <fcntl.h>
+#include "cosc/util.hpp"
 #include "proto/MusicVis.capnp.h"
 #include <algorithm>
 
@@ -98,14 +100,30 @@ void cosc::SongData::mixAudio(uint8_t *stream, int len) {
 
     // send data to the sound driver
     SDL_AudioStreamGet(audioStream, stream, len);
+    audioPos += len;
 
-    // we are given len in bytes, and since if we have sint16 samples, we just divide by the sizeof(sint16)
-    // this may also require a divide by channels?
-    audioPos += len / 2 / sizeof(int16_t);
-    // and the block position should then be that divided by the block size
-    blockPos = audioPos / spectrum.getBlockSize();
-    SPDLOG_DEBUG("Sample position: {}/{}, Block position: {}/{}", audioPos, audioLen, blockPos,
-        spectrum.getBlocks().size());
+    auto now = std::chrono::steady_clock::now();
+    mixAudioTime = util::NanoDuration_t(now - lastMixAudioCall);
+    mixAudioSamples = len;
+    lastMixAudioCall = now;
+    canPredictAudio = true;
+    SPDLOG_TRACE("Time between mix audio calls in ns: {} (ms: {:.2f}), samples: {}, audioPos: {}",
+                 mixAudioTime.count(), mixAudioTime.count() / 1e6, mixAudioSamples, audioPos);
+}
+
+uint32_t cosc::SongData::predictSpectrumBlockPos() {
+    // first, figure out where we currently are playing samples
+    auto begin = audioPos;
+    auto end = audioPos + mixAudioSamples;
+
+    auto nextExpectedMixCall = lastMixAudioCall + mixAudioTime;
+    auto now = std::chrono::steady_clock::now();
+    auto progress = now.time_since_epoch().count() / nextExpectedMixCall.time_since_epoch().count();
+    auto diff = util::NanoDuration_t(nextExpectedMixCall - now).count();
+
+    // SPDLOG_DEBUG("Next mixAudio call expected in {:.2f} ms progress: {:.2f}", diff / 1e6, progress);
+
+    return 0;
 }
 
 cosc::SongData::~SongData() {

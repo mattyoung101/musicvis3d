@@ -18,6 +18,7 @@ static constexpr int WIDTH = 1600;
 static constexpr int HEIGHT = 900;
 
 cosc::Camera camera;
+bool isCursorCapture = true;
 
 /// Last frame delta time (seconds)
 float delta;
@@ -30,7 +31,7 @@ static void audio_callback(void *userData, uint8_t *stream, int len) {
 }
 
 int main(int argc, char *argv[]) {
-    spdlog::set_level(spdlog::level::debug);
+    spdlog::set_level(spdlog::level::trace);
     SPDLOG_INFO("COSC3000 Major Project (Computer Graphics) - Matt Young, 2024");
 
     if (argc < 3) {
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
     };
     SDL_AudioSpec obtained;
 
-    int audioDevice = SDL_OpenAudioDevice(nullptr, 0, &audioSpec, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
+    int audioDevice = SDL_OpenAudioDevice(nullptr, 0, &audioSpec, &obtained, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
     if (audioDevice < 0) {
         SPDLOG_ERROR("Failed to initialise SDL audio: {}", SDL_GetError());
         return 1;
@@ -143,8 +144,12 @@ int main(int argc, char *argv[]) {
                 if (event.key.keysym.scancode == SDL_SCANCODE_G) {
                     SPDLOG_INFO("Camera position: {} {} {}", camera.pos.x, camera.pos.y, camera.pos.z);
                 }
+                if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                    isCursorCapture = !isCursorCapture;
+                    SDL_SetRelativeMouseMode(isCursorCapture ? SDL_TRUE : SDL_FALSE);
+                }
             }
-            if (event.type == SDL_MOUSEMOTION) {
+            if (event.type == SDL_MOUSEMOTION && isCursorCapture) {
                 camera.processMouseInput(event.motion.xrel, -event.motion.yrel);
             }
         }
@@ -152,6 +157,14 @@ int main(int argc, char *argv[]) {
         // clear screen
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        if (!songData.canPredictAudio) {
+            SPDLOG_WARN("Cannot yet predict spectrum block pos, going to skip this frame!");
+            SDL_GL_SwapWindow(window);
+            continue;
+        }
+
+        auto blockPos = songData.predictSpectrumBlockPos();
 
         // enable our shader program (before we push uniforms)
         shader.use();
