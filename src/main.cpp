@@ -18,6 +18,7 @@ static constexpr int WIDTH = 1600;
 static constexpr int HEIGHT = 900;
 
 cosc::Camera camera;
+bool isCursorCapture = true;
 
 /// Last frame delta time (seconds)
 float delta;
@@ -89,7 +90,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    SDL_Window *window = SDL_CreateWindow("COSC3000 Graphics Minor Project", SDL_WINDOWPOS_CENTERED,
+    SDL_Window *window = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (window == nullptr) {
         SPDLOG_ERROR("Failed to create window: {}", SDL_GetError());
@@ -119,7 +120,7 @@ int main(int argc, char *argv[]) {
     // basically capture mouse, for FPS controls
     // note this is different from SDL_CaptureMouse though, but we are emulating the behaviour of what, for
     // example, libgDX would call "capture mouse"
-    SDL_SetRelativeMouseMode(SDL_TRUE);
+    SDL_SetRelativeMouseMode(isCursorCapture ? SDL_TRUE : SDL_FALSE);
 
     // setup song data audio stream - after this, audio should be good to go
     songData.setupAudio(audioSpec.format, obtained.format);
@@ -143,8 +144,12 @@ int main(int argc, char *argv[]) {
                 if (event.key.keysym.scancode == SDL_SCANCODE_G) {
                     SPDLOG_INFO("Camera position: {} {} {}", camera.pos.x, camera.pos.y, camera.pos.z);
                 }
+                if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                    isCursorCapture = !isCursorCapture;
+                    SDL_SetRelativeMouseMode(isCursorCapture ? SDL_TRUE : SDL_FALSE);
+                }
             }
-            if (event.type == SDL_MOUSEMOTION) {
+            if (event.type == SDL_MOUSEMOTION && isCursorCapture) {
                 camera.processMouseInput(event.motion.xrel, -event.motion.yrel);
             }
         }
