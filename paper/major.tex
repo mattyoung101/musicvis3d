@@ -67,14 +67,65 @@
 \tableofcontents
 
 \section{Introduction}
+Since the first music video in (YEAR) (CITE), there has been broad interest in constructing "music
+visualisers": the process of building an often real-time visual representation of the audio.
 
-\section{Methodology}
-\subsection{Toolchain and environment}
+- creative and technical
+- music visualisers used by live musicians
+- many different ways to interpret audio signals
+- demoscene inspiration
+
+\subsection{Visual inspiration}
+The particular music visualiser I aim to construct is an improved version of the "spectrum of bars" once used
+by Canadian record label Monstercat, shown in Figure \ref{monstercat}. The label has since transitioned away
+from this computational music visualiser, and instead use custom music videos.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=384px]{img/monstercat.png}
+\caption{Visualisation of the song "Pure Sunlight", CITATION.}
+\label{monstercat}
+\end{figure}
+
+- demoscene inspiration
+
+\section{Architecture overview}
+\subsection{Overall description of sub-applications}
 The visualiser itself is developed and tested in a Linux environment, and is split into two sub-applications:
-the visualiser itself, and the analysis script. Signal processing is a very complex subject, and real-time
-("online") signal processing is even more so. Python generally has simpler tools to address signal processing
-problems, such as NumPy and SciPy, so the signal processing part was moved offline into a Python script.
+the visualiser itself (written in C++20), and the analysis script (written in Python). Signal processing is a
+very complex subject, and real-time ("online") signal processing is even more so. Python generally has simpler
+tools to address signal processing problems, such as NumPy and SciPy, so the signal processing part was moved
+offline into a Python script.
 
+(DIAGRAM)
+
+The analysis script is first run that reads a FLAC (CITATION) audio file, and produces a Cap'n Proto (CITATION)
+encoded binary file containing the necessary data to render a spectrum for the chosen song. Each song consists
+of a directory containing one audio file, \verb|audio.flac|, and one spectral data file, \verb|spectrum.bin|.
+These are stored in the \verb|data| directory. For example: \\
+\verb|data/songs/LauraBrehm_PureSunlight/{audio.flac},{spectrum.bin}|
+
+(DIRECTORY TREE)
+
+Free Lossless Audio Codec (FLAC) is a lossless audio compression and container format. It was chosen because
+(REASONS).
+
+Cap'n Proto is a binary serialisation format that is regarded as a faster successor to Protocol Buffers.
+Compared to Protocol Buffers, which are also a widely used binary serialisation format, Cap'n Proto has the
+added benefit of requiring zero decode time and supporting very fast in-memory access. This is perfect for the
+spectral data, which needs to be written once by the Python code, and re-read continuously by the C++
+rendering code. Some of this reading takes place in the audio callback, which could be regarded as a soft
+real-time function, and hence requiring very minimal overhead.
+\footnote{Additionally, Cap'n P integrates nicely with my editor, Neovim, which was one of the bigger reasons
+for its selection.}
+
+The FLAC file for a typical song weighs in at around 10 MB, and the spectral data is only around 200 KiB
+thanks to Cap'n Proto's packed stream writing feature. \footnote{Due to its speed, Cap'n P has to make some
+trade-offs in regards to message size vs. speed, usually preferring larger messages. Since my files are
+checked into Git, I used packed message writing to prefer smaller messages with an ever so slightly longer
+decode time.}
+
+\subsection{Visualiser}
 The visualiser is what we see on the screen, the real-time rendering system that displays the bars, once the
 spectral data has been computed. It is written in C++20 using OpenGL, and is built using industry standard
 tools CMake, Ninja and the Clang compiler. It uses a number of open-source libraries:
@@ -86,6 +137,7 @@ tools CMake, Ninja and the Clang compiler. It uses a number of open-source libra
         C++.
 \end{itemize}
 
+\subsection{Analysis script}
 The analysis script is written in Python, and computes the spectral data itself. It takes a FLAC file, and
 computes the spectral data necessary to render the bars. It also uses a number of open source libraries:
 \begin{itemize}
@@ -95,7 +147,42 @@ computes the spectral data necessary to render the bars. It also uses a number o
     \item Cap'n Proto
 \end{itemize}
 
-\subsection{Signal processing}
+\section{Signal processing}
+The overarching goal of the signal processing is to turn a time-domain audio signal into a frequency domain
+spectrogram, similar to the Monstercat visualiser shown in Figure \ref{monstercat}. This turns out to actually
+be quite an involved process, so this section will essentially a whirlwind tour of audio signal processing!
+
+\subsection{Fourier transforms and the DFT}
+
+\subsection{Decoding and chunking audio}
+In order for the Fourier transform to be possible, a \textit{chunk} of audio needs to be processed. In other
+words, we can't just process individual samples since we're doing a time-domain to frequency-domain
+transform. After decoding the FLAC audio using the \verb|audiofile| library, the audio samples are then split
+into chunks/blocks of 1024 samples using NumPy. Additionally, the stereo signal is transformed into a mono
+signal by averaging the left/right channels, since multi-channel FFTs are much more complicated.
+
+This is all just a few lines of Python:
+\begin{minted}{python}
+    # load audio
+    signal, sampling_rate = audiofile.read(song_path, always_2d=True)
+    # assume a stereo signal, let's mix it down to mono
+    mono = np.mean(signal, axis=0)
+    # split signal into chunks of BLOCK_SIZE
+    blocks = np.split(mono, range(BLOCK_SIZE, len(mono), BLOCK_SIZE))
+\end{minted}
+
+
+\subsection{Power spectrum and periodogram}
+
+\subsection{Conversion to dBFS}
+
+\subsection{Sampling and binning spectral data}
+
+\section{Computer graphics}
+
+\section{Results}
+
+\section{Conclusion}
 
 \section{References}
 \printbibliography[heading=none]

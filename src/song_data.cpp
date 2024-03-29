@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include "proto/MusicVis.capnp.h"
 #include <algorithm>
+#include "cosc/util.hpp"
 
 namespace fs = std::filesystem;
 
@@ -74,7 +75,8 @@ cosc::SongData::SongData(const std::string &dataDir, const std::string &songName
 }
 
 void cosc::SongData::setupAudio(SDL_AudioFormat wanted, SDL_AudioFormat obtained) {
-    audioStream = SDL_NewAudioStream(wanted, channels, sampleRate, obtained, channels, sampleRate);
+    audioStream = SDL_NewAudioStream(wanted, channels, sampleRate,
+                                     obtained, channels, sampleRate);
     // shove all the data through the stream
     // seems as though we have to do x2 since there are two stereo channels? and audioLen is PCM frames?
     SDL_AudioStreamPut(audioStream, audio, audioLen * sizeof(int32_t) * channels);
@@ -90,21 +92,24 @@ void cosc::SongData::mixAudio(uint8_t *stream, int len) {
     if (len == 0) {
         // this should be OK as long as the song is actually finished - SDL requires us to fill the buffer
         // even if the song is done
-        // SPDLOG_WARN("Writing zero bytes to audio stream! Glitch will occur! len: {}, maxInStream: {}", len,
-        // maxInStream);
+        SPDLOG_TRACE("Writing zeroes to audio stream - song is probably finished?");
         std::memset(stream, 0, len);
         return;
     }
 
-    // send data to the sound driver
+    // send data to the sound driver - in mute we just copy zeroes
+#if MUTE == 0
     SDL_AudioStreamGet(audioStream, stream, len);
+#else
+    std::memset(stream, 0, len);
+#endif
 
     // we are given len in bytes, and since if we have sint16 samples, we just divide by the sizeof(sint16)
     // this may also require a divide by channels?
     audioPos += len / sizeof(int32_t) / channels;
     // and the block position should then be that divided by the block size
     blockPos = audioPos / spectrum.getBlockSize();
-    SPDLOG_DEBUG("Sample position: {}/{} ({:.2f}%), Block position: {}/{}", audioPos, audioLen,
+    SPDLOG_TRACE("Sample position: {}/{} ({:.2f}%), Block position: {}/{}", audioPos, audioLen,
                  (static_cast<double>(audioPos) / static_cast<double>(audioLen)) * 100.f, blockPos,
                  spectrum.getBlocks().size());
 }

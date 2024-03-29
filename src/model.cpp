@@ -81,7 +81,7 @@ void cosc::Model::draw(Shader &shader) {
     }
 }
 
-void cosc::Model::manualApplyTransform() {
+void cosc::Model::applyTransform() {
     // reset transform matrix
     transform = glm::mat4{1.f};
 
@@ -89,32 +89,17 @@ void cosc::Model::manualApplyTransform() {
 
     // apply scale (S_x, S_y, S_z on the diagonal)
     glm::mat4 scaleMat{1.f};
-    scaleMat[0][0] = scale;
-    scaleMat[1][1] = scale;
-    scaleMat[2][2] = scale;
-    //scaleMat = glm::scale(scaleMat, glm::vec3(scale, scale, scale));
+    scaleMat = glm::scale(scaleMat, glm::vec3(scale, scale, scale));
 
     // apply translate (T_x, T_y, T_z on the final column)
     glm::mat4 translateMat{1.f};
-    translateMat[3][0] = pos.x;
-    translateMat[3][1] = pos.y;
-    translateMat[3][2] = pos.z;
-    //translateMat = glm::translate(translateMat, glm::vec3(pos.x, pos.y, pos.z));
-    //SPDLOG_DEBUG("translate:\n{}", glm::to_string(translateMat));
-    
+    translateMat = glm::translate(translateMat, glm::vec3(pos.x, pos.y, pos.z));
+
     // apply rotation (yaw only)
     glm::mat4 rotateMat{1.f};
     // convert yaw in degrees to radians
     float yawRad = glm::radians(yaw);
-    float costheta = cos(yawRad);
-    float sintheta = sin(yawRad);
-    
-    // rotate around Y axis (yaw)
-    rotateMat[0][0] = costheta;
-    rotateMat[2][0] = sintheta;
-    rotateMat[0][2] = -sintheta;
-    rotateMat[2][2] = costheta;
-    //rotateMat = glm::rotate(rotateMat, yawRad, glm::vec3{0.f, 1.f, 0.f});
+    rotateMat = glm::rotate(rotateMat, yawRad, glm::vec3{0.f, 1.f, 0.f});
 
     // apply final transform by multiplying matrix
     // this is treated in the order: rotate, translate, scale
