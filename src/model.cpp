@@ -22,10 +22,6 @@ cosc::Model::Model(const fs::path &path) {
     }
 
     processNode(scene->mRootNode, scene);
-
-    // scale model (since they are huge)
-    scale = 0.1f;
-    transform = glm::scale(transform, glm::vec3(scale, scale, scale));
 }
 
 void cosc::Model::processNode(aiNode *node, const aiScene *scene) {
@@ -89,7 +85,7 @@ void cosc::Model::applyTransform() {
 
     // apply scale (S_x, S_y, S_z on the diagonal)
     glm::mat4 scaleMat{1.f};
-    scaleMat = glm::scale(scaleMat, glm::vec3(scale, scale, scale));
+    scaleMat = glm::scale(scaleMat, scale);
 
     // apply translate (T_x, T_y, T_z on the final column)
     glm::mat4 translateMat{1.f};

@@ -13,6 +13,7 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <spdlog/spdlog.h>
 #include "cosc/song_data.hpp"
+#include <random>
 
 static constexpr int WIDTH = 1600;
 static constexpr int HEIGHT = 900;
@@ -44,7 +45,9 @@ static void constructBars(const cosc::SongData &songData, const std::string &dat
         SPDLOG_DEBUG("Adding bar {}/{}", i, songData.spectrum.getNumBars() - 1);
         auto model = cosc::Model(dataDir + "/cube.dae");
         // apply initial transform
-        model.pos.x = 5 * i;
+        model.pos.x = BAR_SPACING * i;
+        // initial uniform scaling
+        model.scale = glm::vec3(BAR_SCALING, BAR_SCALING, BAR_SCALING);
 
         barModels.push_back(model);
     }
@@ -73,6 +76,9 @@ static void pollInputs() {
             if (event.key.keysym.scancode == SDL_SCANCODE_F) {
                 isFreeCam = !isFreeCam;
                 SPDLOG_INFO("Toggle freecam");
+            }
+            if (event.key.keysym.scancode == SDL_SCANCODE_C) {
+                SPDLOG_INFO("Camera pos:\nx: {}, y: {}, z: {}", camera.pos.x, camera.pos.y, camera.pos.z);
             }
         }
         if (event.type == SDL_MOUSEMOTION && isCursorCapture && isFreeCam) {
@@ -127,15 +133,17 @@ int main(int argc, char *argv[]) {
         .freq = static_cast<int>(songData.spectrum.getSampleRate()),
         .format = AUDIO_S32,
         .channels = 2,
-        // we could make this the spectrum block size, but we have to be conscious of audio latency
+        // This needs to be set to a small value, otherwise the number of samples that mixAudio() copies into
+        // its output buffer is too many, and we can't figure out which block we're in! (i.e. we skip blocks
+        // because we're diving by a larger number).
+        // Just don't make this too small otherwise you'll eventually run into choppy audio.
         .samples = 128,
         .callback = audio_callback,
         .userdata = static_cast<void *>(&songData),
     };
     SDL_AudioSpec obtained;
 
-    int audioDevice = SDL_OpenAudioDevice(nullptr, 0, &audioSpec,
-                                          &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
+    int audioDevice = SDL_OpenAudioDevice(nullptr, 0, &audioSpec, &obtained, SDL_AUDIO_ALLOW_ANY_CHANGE);
     if (audioDevice < 0) {
         SPDLOG_ERROR("Failed to initialise SDL audio: {}", SDL_GetError());
         return 1;
@@ -160,8 +168,9 @@ int main(int argc, char *argv[]) {
     }
 
     // TODO make fullscreen
-    SDL_Window *window = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    SDL_Window *window
+        = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", SDL_WINDOWPOS_CENTERED,
+            SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (window == nullptr) {
         SPDLOG_ERROR("Failed to create window: {}", SDL_GetError());
         return 1;
@@ -197,6 +206,11 @@ int main(int argc, char *argv[]) {
     songData.setupAudio(audioSpec.format, obtained.format);
     SDL_PauseAudioDevice(audioDevice, 0);
 
+    // manually calculated :skull:
+    // x: 3.7500107, y: 0, z: 7.958207
+    camera.pos.x = 3.7500107;
+    camera.pos.z = 7.958207;
+
     while (!shouldQuit) {
         auto begin = std::chrono::steady_clock::now();
 
@@ -215,7 +229,21 @@ int main(int argc, char *argv[]) {
         shader.setMat4("view", camera.viewMatrix());
         shader.setVec3("viewPos", camera.pos);
 
+        // current bar we're editing
+        size_t barIdx = 0;
+        // current spectrum block
+        // note that songData.blockPos gets updated by mixAudio() (FIXME possible race condition?)
+        auto block = songData.spectrum.getBlocks()[songData.blockPos];
         for (auto &bar : barModels) {
+            // first, get bar height from 0-255 directly from the Cap'n Proto
+            auto barHeight = block[barIdx];
+            // map that 0 to 255 to BAR_MIN_HEIGHT to BAR_MAX_HEIGHT
+            auto scale = cosc::util::mapRange(0., 255., BAR_MIN_HEIGHT, BAR_MAX_HEIGHT, barHeight);
+            // apply scale, also applying our baseline BAR_SCALING factor!
+            bar.scale.y = scale * BAR_SCALING;
+            barIdx++;
+
+            // now update transforms, and off to the GPU we go!
             bar.applyTransform();
             bar.draw(shader);
         }
@@ -227,6 +255,7 @@ int main(int argc, char *argv[]) {
         // compute in nanoseconds (high resolution) then convert to seconds for delta time
         delta = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1e9;
         deltaSum += delta;
+        SPDLOG_TRACE("Delta: {:.2f} ms", delta * 1000.0);
     }
 
     SPDLOG_DEBUG("Quitting");

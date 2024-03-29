@@ -36,7 +36,7 @@ public:
     float yaw = 0.f;
 
     /// Current scale
-    float scale;
+    glm::vec3 scale{0.f, 0.f, 0.f};
 
     /// Current position
     glm::vec3 pos { 0.f, 0.f, 0.f };
