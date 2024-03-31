@@ -44,7 +44,7 @@
     style=numeric,
     sorting=none
 ]{biblatex}
-% \addbibresource{graphics.bib}
+\addbibresource{major.bib}
 
 % opening
 \title{\textbf{A 3D music visualisation in OpenGL using the Discrete Fourier Transform}}
@@ -66,6 +66,10 @@
 
 \tableofcontents
 
+\clearpage
+\listoffigures
+\clearpage
+
 \section{Introduction}
 Since the first music video in (YEAR) (CITE), there has been broad interest in constructing "music
 visualisers": the process of building an often real-time visual representation of the audio.
@@ -83,7 +87,7 @@ from this computational music visualiser, and instead use custom music videos.
 \begin{figure}[H]
 \centering
 \includegraphics[width=384px]{img/monstercat.png}
-\caption{Visualisation of the song "Pure Sunlight", CITATION.}
+\caption{Visualisation of the song "Pure Sunlight" \cite{youtubeElectronicFijiWiji}}
 \label{monstercat}
 \end{figure}
 
@@ -120,39 +124,105 @@ real-time function, and hence requiring very minimal overhead.
 for its selection.}
 
 The FLAC file for a typical song weighs in at around 10 MB, and the spectral data is only around 200 KiB
-thanks to Cap'n Proto's packed stream writing feature. \footnote{Due to its speed, Cap'n P has to make some
-trade-offs in regards to message size vs. speed, usually preferring larger messages. Since my files are
-checked into Git, I used packed message writing to prefer smaller messages with an ever so slightly longer
-decode time.}
+thanks to Cap'n Proto's packed stream writing feature. Due to its speed, Cap'n P has to make some
+trade-offs in regards to message size vs. speed, usually preferring larger messages. Since I'm checking the
+data directory into the Git version control system, I used packed message writing to prefer smaller messages
+with an ever so slightly longer decode time.
 
 \subsection{Visualiser}
 The visualiser is what we see on the screen, the real-time rendering system that displays the bars, once the
-spectral data has been computed. It is written in C++20 using OpenGL, and is built using industry standard
-tools CMake, Ninja and the Clang compiler. It uses a number of open-source libraries:
+spectral data has been computed. It is written in C++20, uses the OpenGL graphics API, and is built using
+industry standard tools CMake, Ninja and the Clang compiler. This code runs "online", meaning it runs in
+real-time and we would ideally like to spend no longer than 16 ms per frame (for 60 FPS). It uses a number of
+open-source libraries:
 \begin{itemize}
 	\item SDL2: Platform window management, keyboard/mouse inputs, OpenGL context creation
 	\item glad: For OpenGL function loading and feature queries
     \item glm: The OpenGL maths library, used for computing transforms and its matrix/vector types
     \item Cap'n Proto: An extremely fast data serialisation format, used to transport data between Python and
         C++.
+    \item dr\_flac: A single-file FLAC decoder.
+    \item Tweeny: A library for tweening (interpolation).
 \end{itemize}
 
 \subsection{Analysis script}
-The analysis script is written in Python, and computes the spectral data itself. It takes a FLAC file, and
-computes the spectral data necessary to render the bars. It also uses a number of open source libraries:
+The analysis script is written in Python, and computes the spectral data used by the visualiser to display the
+bars. It computes this data "offline", meaning it does not run in real-time, unlike the C++ code. It also uses
+a relatively standard setup of Python libraries, with some additions due to the audio work involved:
 \begin{itemize}
     \item NumPy
     \item SciPy
-    \item spectrum.py
+    \item spectrum.py: Used to compute the periodogram
     \item Cap'n Proto
+    \item audiofile.py: For loading the FLAC file
+    \item Matplotlib: For graphing the waveform, debugging
 \end{itemize}
 
+\clearpage
 \section{Signal processing}
 The overarching goal of the signal processing is to turn a time-domain audio signal into a frequency domain
 spectrogram, similar to the Monstercat visualiser shown in Figure \ref{monstercat}. This turns out to actually
 be quite an involved process, so this section will essentially a whirlwind tour of audio signal processing!
 
-\subsection{Fourier transforms and the DFT}
+\subsection{Background: Computer audio}
+Firstly, to clarify, a raw audio signal consists of a number of digital \textit{samples} that are sent through
+an audio system at a particular \textit{sampling frequency}, typically 44.1 KHz.
+\footnote{The exact reasons why are out of scope for this paper, but it has to do with the Nyquist-Shannon
+theorem and history with CDs.}
+Most audio is stereo, and hence there are typically two channels (although cinemas, for example, may use many
+more channels). Eventually making its way out of userspace and into the kernel, these samples are converted
+into an analogue signal using a Digital-to-Analogue (DAC) converter, which is typically located on most PC
+motherboards or as a separate peripheral. The samples cause the speaker \textit{driver} (the membrane, usually
+driven by magnets) to vibrate, which creates the sensation of sound. A typical digital audio signal is shown
+in Figure \ref{fig:audiosignal}.
+
+In order to build the visualiser, we will need to convert this time-domain collection of samples into a
+frequency-domain spectrogram.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=350px]{img/audiosignal.png}
+\caption{An audio signal loaded in Audacity. Top is zoomed out, bottom is zoomed in showing samples.}
+\label{fig:audiosignal}
+\end{figure}
+
+\subsection{Fourier transforms, DFT and FFT}
+The history of the Fourier transform dates back to 1822 when mathematician Joseph Fourier understood that any
+function could be represented as a sum of sines \cite{wolframFourierSeries}. From that theory, the Fourier
+transform was developed.
+
+The core equation for the Fourier transform is given by \cite{wolframFourierTransform}:
+$$\widehat{f}(\xi) = \int_{-\infty}^{\infty} f(x)\ e^{-i 2\pi \xi x}\,dx.$$
+
+In simplistic terms, the Fourier transform converts a time-domain signal, where the $x$ axis is time and the
+$y$ axis is magnitude, into the frequency-domain, where the $x$ axis is frequency and the $y$ axis is the
+magnitude of that particular frequency. A diagram of this transform is shown in Figure \ref{fig:ftdiagram}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=250px]{img/fouriertransform.png}
+\caption{Diagram showing the time-domain to frequency-domain conversion of the Fourier transform}
+\label{fig:ftdiagram}
+\end{figure}
+
+From the Fourier transform comes the concept of the Discrete Fourier Transform (DFT). The equation for the DFT
+is similar, but slightly different to, the equation for the regular continuous Fourier transform:
+$$X_k = \sum_{n=0}^{N-1} x_n \cdot e^{-i2\pi \tfrac{k}{N}n}$$
+
+The DFT itself has many applications outside of audio analysis. A close cousin of the DFT, the Discrete Cosine
+Transform (DCT), is used in many image compression algorithms, for example.
+
+Computing the DFT naively has a time complexity of $O(n^2)$ \cite{Rajaby2022} , which is typically considered
+unfavourable in CS. This led to what has been described as "the most important numerical algorithm of our
+lifetime" \cite{Strang1994}: the Fast Fourier Transform (FFT). The modern FFT was invented by James Cooley and
+John Tukey in 1965 \cite{Cooley1965AnAF}, although Carl Freidrich Gauss had earlier work of a similar nature
+from 1805 \cite{Heideman1985}. This algorithm reduces the complexity to $O(n \log n)$, which is much more
+palatable.
+
+It's also important to note here that evaluating the general DFT operates on complex numbers, and its result
+is also complex. However, since we are using a real-valued audio signal, we can instead make use of
+specialised variants of the FFT that use purely real signals \cite{Sorensen1987}. The complex output is then
+just converted to its magnitude, e.g. given $z = x + yi$ we take $r = \sqrt{x^2 + y^2}$.
 
 \subsection{Decoding and chunking audio}
 In order for the Fourier transform to be possible, a \textit{chunk} of audio needs to be processed. In other
@@ -171,7 +241,6 @@ This is all just a few lines of Python:
     blocks = np.split(mono, range(BLOCK_SIZE, len(mono), BLOCK_SIZE))
 \end{minted}
 
-
 \subsection{Power spectrum and periodogram}
 
 \subsection{Conversion to dBFS}
@@ -179,6 +248,9 @@ This is all just a few lines of Python:
 \subsection{Sampling and binning spectral data}
 
 \section{Computer graphics}
+\subsection{Audio and spectrum decoding}
+
+\subsection{Transforming and rendering bars}
 
 \section{Results}
 

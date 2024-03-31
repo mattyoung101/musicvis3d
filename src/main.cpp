@@ -241,6 +241,7 @@ int main(int argc, char *argv[]) {
             auto scale = cosc::util::mapRange(0., 255., BAR_MIN_HEIGHT, BAR_MAX_HEIGHT, barHeight);
             // apply scale, also applying our baseline BAR_SCALING factor!
             bar.scale.y = scale * BAR_SCALING;
+            //bar.pos.y = scale;
             barIdx++;
 
             // now update transforms, and off to the GPU we go!

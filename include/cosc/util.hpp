@@ -20,7 +20,7 @@ constexpr float BAR_SCALING = 0.1;
 constexpr float BAR_MIN_HEIGHT = 1.0;
 
 /// Max height for an extended bar (multiplied by BAR_SCALING)
-constexpr float BAR_MAX_HEIGHT = 10.;
+constexpr float BAR_MAX_HEIGHT = 20.;
 
 namespace cosc::util {
 
