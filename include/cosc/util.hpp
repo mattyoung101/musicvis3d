@@ -8,7 +8,13 @@ namespace fs = std::filesystem;
 // Project defines.
 
 /// If true, mute audio (mostly for debugging so I don't get sick of the songs!)
-#define MUTE 0
+#define MUTE 1
+
+/// If true, run the app in fullscreen
+#define FULLSCREEN 0
+
+/// If true, do wireframe rendering
+#define WIREFRAME 0
 
 /// Units between bars
 constexpr float BAR_SPACING = 2.5;

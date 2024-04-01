@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <glm/mat4x4.hpp>
+#include "cosc/util.hpp"
 
 namespace cosc {
 
@@ -11,7 +12,7 @@ public:
     /// Shader program GL ID
     unsigned int shaderProgram;
 
-    explicit Shader(const std::string &vertexPath, const std::string &fragmentPath);
+    explicit Shader(const fs::path &vertexPath, const fs::path &fragmentPath);
 
     ~Shader();
 

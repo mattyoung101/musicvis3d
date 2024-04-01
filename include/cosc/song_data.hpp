@@ -7,6 +7,7 @@
 #include "proto/MusicVis.capnp.h"
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
+#include "cosc/util.hpp"
 
 namespace cosc {
 /// Encapsulates decoded song data.
@@ -14,22 +15,21 @@ class SongData {
 public:
     /// Song name
     std::string name;
-    
+
     /// Deserialised music vis spectrum data
     MusicVisBars::Reader spectrum;
 
-    
     /**
      * Load song data. This will both load the FLAC file and the Cap'n Proto serialised spectrum.
      * @param dataDir path to data dir
      * @param songName song name
      */
-    explicit SongData(const std::string &dataDir, const std::string &songName); 
+    explicit SongData(const fs::path &dataDir, const fs::path &songName);
     ~SongData();
-    
+
     /// Sets up the SDL audio stream with the obtained audio config from the sound driver.
     void setupAudio(SDL_AudioFormat wanted, SDL_AudioFormat obtained);
-    
+
     /**
      * Requests the mixing of 'len' bytes into the buffer `stream`.
      * If the audio playback is finished, no bytes will be mixed.
@@ -38,7 +38,7 @@ public:
 
     /// Current audio position in samples
     size_t audioPos = 0;
-    
+
     /// Current audio position in spectrum blocks
     size_t blockPos = 0;
 

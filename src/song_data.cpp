@@ -13,9 +13,9 @@
 
 namespace fs = std::filesystem;
 
-cosc::SongData::SongData(const std::string &dataDir, const std::string &songName) {
-    fs::path flacFile = dataDir + "/songs/" + songName + "/audio.flac";
-    fs::path spectrumFile = dataDir + "/songs/" + songName + "/spectrum.bin";
+cosc::SongData::SongData(const fs::path &dataDir, const fs::path &songName) {
+    auto flacFile = dataDir / "songs" / songName / "audio.flac";
+    auto spectrumFile = dataDir / "songs" / songName / "spectrum.bin";
 
     if (!fs::exists(flacFile)) {
         SPDLOG_ERROR("FLAC file does not exist! Tried: {}", flacFile.string());

@@ -21,6 +21,7 @@ add_executable(musicvis
     src/song_data.cpp
     src/animation.cpp
     src/lib/stb_image.c
+    src/cubemap.cpp
     ${musicVisProtoSources}
 )
 target_include_directories(musicvis PRIVATE include ${CMAKE_CURRENT_BINARY_DIR})
@@ -38,7 +39,6 @@ find_package(spdlog REQUIRED)
 target_link_libraries(musicvis spdlog::spdlog)
 
 # assimp
-# FIXME may not be needed for major
 find_package(assimp REQUIRED)
 target_link_libraries(musicvis assimp::assimp)
 target_include_directories(musicvis PRIVATE ${ASSIMP_INCLUDE_DIRS})

@@ -6,7 +6,9 @@
 #include "glad/gl.h"
 #include <glm/gtc/type_ptr.hpp>
 
-cosc::Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath) {
+cosc::Shader::Shader(const fs::path &vertexPath, const fs::path &fragmentPath) {
+    SPDLOG_INFO("Loading shader. Vertex: {}, fragment: {}", vertexPath.string(), fragmentPath.string());
+
     // read shaders
     auto vertexSource = cosc::util::readPathToString(vertexPath);
     auto fragmentSource = cosc::util::readPathToString(fragmentPath);

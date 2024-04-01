@@ -2,6 +2,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <spdlog/spdlog.h>
+#include "cosc/texture.hpp"
 #include "glad/gl.h"
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -42,6 +43,7 @@ void cosc::Model::processNode(aiNode *node, const aiScene *scene) {
 cosc::Mesh cosc::Model::processMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    std::vector<Texture> textures;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
         Vertex vertex;
@@ -58,7 +60,12 @@ cosc::Mesh cosc::Model::processMesh(aiMesh *mesh, const aiScene *scene) {
         }
     }
 
-    return Mesh(vertices, indices);
+    // process material
+    if (mesh->mMaterialIndex >= 0) {
+        // TODO
+    }
+
+    return Mesh(vertices, indices, textures);
 }
 
 void cosc::Model::draw(Shader &shader) {

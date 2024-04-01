@@ -1,5 +1,6 @@
 #include "cosc/animation.hpp"
 #include "cosc/camera.hpp"
+#include "cosc/cubemap.hpp"
 #include "cosc/model.hpp"
 #include "cosc/shader.hpp"
 #include "cosc/util.hpp"
@@ -117,9 +118,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    std::string dataDir = argv[1];
+    fs::path dataDir = argv[1];
     std::string songName = argv[2];
-    SPDLOG_INFO("Data dir: {}", dataDir);
+    SPDLOG_INFO("Data dir: {}", dataDir.string());
     SPDLOG_INFO("Song name: {}", songName);
 
     // load song data
@@ -171,10 +172,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // TODO make fullscreen
+#if FULLSCREEN == 0
     SDL_Window *window
         = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+#else
+    SDL_Window *window
+        = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", 0,
+            0, 0, 0, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP);
+#endif
     if (window == nullptr) {
         SPDLOG_ERROR("Failed to create window: {}", SDL_GetError());
         return 1;
@@ -191,15 +197,20 @@ int main(int argc, char *argv[]) {
     SPDLOG_INFO("GL renderer: {}", (const char *) glGetString(GL_RENDERER));
     SPDLOG_INFO("GL version: {}", (const char *) glGetString(GL_VERSION));
 
-    // setup shaders
-    cosc::Shader shader(dataDir + "/vert.glsl", dataDir + "/frag.glsl");
-
-    // setup GL viewport
-    glViewport(0, 0, WIDTH, HEIGHT);
+    // setup baseline GL stuff
+    int realWidth;
+    int realHeight;
+    SDL_GetWindowSizeInPixels(window, &realWidth, &realHeight);
+    glViewport(0, 0, realWidth, realHeight);
     glEnable(GL_DEPTH_TEST);
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#if WIREFRAME == 1
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#endif
 
+    // setup our custom GL objects
     constructBars(songData, dataDir);
+    //cosc::Cubemap cubemap(dataDir, "skybox");
+    cosc::Shader barShader(dataDir / "bar.vert.glsl", dataDir / "bar.frag.glsl");
 
     // basically capture mouse, for FPS controls
     // note this is different from SDL_CaptureMouse though, but we are emulating the behaviour of what, for
@@ -231,12 +242,12 @@ int main(int argc, char *argv[]) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // enable our shader program (before we push uniforms)
-        shader.use();
+        barShader.use();
 
         // push camera matrices to vertex shader (model transform is pushed later in draw)
-        shader.setMat4("projection", camera.projectionMatrix(WIDTH, HEIGHT));
-        shader.setMat4("view", camera.viewMatrix());
-        shader.setVec3("viewPos", camera.pos);
+        barShader.setMat4("projection", camera.projectionMatrix(WIDTH, HEIGHT));
+        barShader.setMat4("view", camera.viewMatrix());
+        barShader.setVec3("viewPos", camera.pos);
 
         // current bar we're editing
         size_t barIdx = 0;
@@ -255,7 +266,7 @@ int main(int argc, char *argv[]) {
 
             // now update transforms, and off to the GPU we go!
             bar.applyTransform();
-            bar.draw(shader);
+            bar.draw(barShader);
         }
 
         SDL_GL_SwapWindow(window);
