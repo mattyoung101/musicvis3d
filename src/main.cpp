@@ -1,3 +1,4 @@
+#include "cosc/animation.hpp"
 #include "cosc/camera.hpp"
 #include "cosc/model.hpp"
 #include "cosc/shader.hpp"
@@ -19,6 +20,8 @@ static constexpr int WIDTH = 1600;
 static constexpr int HEIGHT = 900;
 
 cosc::Camera camera;
+cosc::CameraAnimationManager animationManager(camera);
+
 /// List of bar models
 std::vector<cosc::Model> barModels;
 /// Capture cursor
@@ -48,6 +51,7 @@ static void constructBars(const cosc::SongData &songData, const std::string &dat
         model.pos.x = BAR_SPACING * i;
         // initial uniform scaling
         model.scale = glm::vec3(BAR_SCALING, BAR_SCALING, BAR_SCALING);
+        model.scale.z *= 2;
 
         barModels.push_back(model);
     }
@@ -216,6 +220,11 @@ int main(int argc, char *argv[]) {
 
         // process SDL input
         pollInputs();
+
+        // update camera animations
+        if (!isFreeCam) {
+            animationManager.update(delta);
+        }
 
         // clear screen
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

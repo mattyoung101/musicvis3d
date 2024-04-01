@@ -5,9 +5,9 @@
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace cosc {
-
 
 typedef enum {
     MOVE_FORWARD,
@@ -15,6 +15,15 @@ typedef enum {
     MOVE_LEFT,
     MOVE_RIGHT
 } MovementType_t;
+
+/// The pose of a camera, with its position and orientation.
+class CameraPose {
+public:
+    glm::vec3 pos;
+    glm::quat orientation;
+
+    explicit CameraPose(const glm::vec3 &pos, const glm::quat &orientation) : pos(pos), orientation(orientation) {}
+};
 
 /// A simple perspective projection camera.
 /// Based on: https://learnopengl.com/code_viewer_gh.php?code=includes/learnopengl/camera.h
@@ -42,12 +51,12 @@ public:
         , pitch(pitch) {
         updateCameraVectors();
     }
-    
+
     /// Computes the view matrix. Should be called each frame.
     glm::mat4 viewMatrix() {
         return glm::lookAt(pos, pos + front, up);
     }
-    
+
     /// Computes the projection matrix. Should be called each frame.
     glm::mat4 projectionMatrix(float screenWidth, float screenHeight) {
         return glm::perspective(glm::radians(zoom), screenWidth / screenHeight, nearClip, farClip);

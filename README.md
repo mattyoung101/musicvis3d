@@ -58,11 +58,13 @@ in `spectrum.bin` and display it.
 ## Libraries used
 This project makes use of the following open-source libraries:
 
-- SDL2
-- glm
-- Assimp
-- spdlog
+- SDL2: zlib licence
+- glm: MIT licence
+- Assimp: BSD 3-Clause
+- spdlog: MIT licence
 - Cap'n Proto: MIT licence
 - dr_flac: Public domain
+- Tweeny: MIT licence
+- stb_image: Public domain
 
 ## Licence

@@ -12,13 +12,15 @@ capnp_generate_cpp(musicVisProtoSources musicVisProtoHeaders proto/MusicVis.capn
 
 add_executable(musicvis 
     src/main.cpp 
-    src/gl.c
+    src/lib/gl.c
     src/util.cpp
     src/mesh.cpp
     src/shader.cpp
     src/model.cpp
-    src/dr_flac.c
+    src/lib/dr_flac.c
     src/song_data.cpp
+    src/animation.cpp
+    src/lib/stb_image.c
     ${musicVisProtoSources}
 )
 target_include_directories(musicvis PRIVATE include ${CMAKE_CURRENT_BINARY_DIR})
