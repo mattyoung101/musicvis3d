@@ -30,7 +30,7 @@ cosc::SongData::SongData(const fs::path &dataDir, const fs::path &songName) {
     SPDLOG_INFO("Spectrum file: {}", spectrumFile.string());
 
     // load FLAC file with dr_flac
-    SPDLOG_DEBUG("Decoding FLAC file");
+    SPDLOG_INFO("Decoding FLAC file");
     audio = drflac_open_file_and_read_pcm_frames_s32(
         flacFile.c_str(), &channels, &sampleRate, &audioLen, nullptr);
     if (audio == nullptr) {
@@ -47,7 +47,7 @@ cosc::SongData::SongData(const fs::path &dataDir, const fs::path &songName) {
         throw std::exception();
     }
 
-    SPDLOG_DEBUG("Decoding capnp message");
+    SPDLOG_INFO("Decoding Cap'n Proto spectrum data");
     // this is only a unique_ptr to keep it alive throughout the class, since capnp is a bit annoying and
     // disabled copy&move.
     // there's probably a better way to do this. too bad!
@@ -80,7 +80,7 @@ void cosc::SongData::setupAudio(SDL_AudioFormat wanted, SDL_AudioFormat obtained
     // shove all the data through the stream
     // seems as though we have to do x2 since there are two stereo channels? and audioLen is PCM frames?
     SDL_AudioStreamPut(audioStream, audio, audioLen * sizeof(int32_t) * channels);
-    // ask it to resample for us while we're not under realtime
+    // ask it to resample for us while we're not under real-time
     SDL_AudioStreamFlush(audioStream);
 }
 

@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
 
     // setup our custom GL objects
     constructBars(songData, dataDir);
-    //cosc::Cubemap cubemap(dataDir, "skybox");
+    cosc::Cubemap skybox(dataDir, "skybox");
     cosc::Shader barShader(dataDir / "bar.vert.glsl", dataDir / "bar.frag.glsl");
 
     // basically capture mouse, for FPS controls
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
         barShader.use();
 
         // push camera matrices to vertex shader (model transform is pushed later in draw)
-        barShader.setMat4("projection", camera.projectionMatrix(WIDTH, HEIGHT));
+        barShader.setMat4("projection", camera.projectionMatrix(realWidth, realHeight));
         barShader.setMat4("view", camera.viewMatrix());
         barShader.setVec3("viewPos", camera.pos);
 
@@ -268,6 +268,9 @@ int main(int argc, char *argv[]) {
             bar.applyTransform();
             bar.draw(barShader);
         }
+
+        // draw skybox!
+        skybox.draw(camera, realWidth, realHeight);
 
         SDL_GL_SwapWindow(window);
 

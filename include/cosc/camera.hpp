@@ -53,12 +53,12 @@ public:
     }
 
     /// Computes the view matrix. Should be called each frame.
-    glm::mat4 viewMatrix() {
+    glm::mat4 viewMatrix() const {
         return glm::lookAt(pos, pos + front, up);
     }
 
     /// Computes the projection matrix. Should be called each frame.
-    glm::mat4 projectionMatrix(float screenWidth, float screenHeight) {
+    glm::mat4 projectionMatrix(float screenWidth, float screenHeight) const {
         return glm::perspective(glm::radians(zoom), screenWidth / screenHeight, nearClip, farClip);
     }
 

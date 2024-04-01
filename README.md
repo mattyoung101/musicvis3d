@@ -67,4 +67,9 @@ This project makes use of the following open-source libraries:
 - Tweeny: MIT licence
 - stb_image: Public domain
 
+Much of this project is based on code from LearnOpenGL https://learnopengl.com/
+
+## Assets used
+The space skybox was generated from: https://tools.wwwtyro.net/space-3d/index.html
+
 ## Licence

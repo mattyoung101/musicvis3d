@@ -9,7 +9,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 cosc::Model::Model(const fs::path &path) {
-    SPDLOG_INFO("Loading model {}", path.string());
+    SPDLOG_DEBUG("Loading model {}", path.string());
     name = path.string();
 
     Assimp::Importer importer {};
