@@ -6,6 +6,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <spdlog/spdlog.h>
 
 namespace cosc {
 
@@ -42,6 +43,7 @@ public:
     float sensitivity = 0.1f;
     float nearClip = 0.1f; // near clipping plane
     float farClip = 100.f; // far clipping plane
+    float boostScale = 3.0f;
 
     Camera(glm::vec3 position = glm::vec3(0.f, 0.f, 0.f), glm::vec3 up = glm::vec3(0.f, 1.f, 0.f),
         float pitch = 0.f, float yaw = -90.f)
@@ -62,8 +64,8 @@ public:
         return glm::perspective(glm::radians(zoom), screenWidth / screenHeight, nearClip, farClip);
     }
 
-    void processKeyboardInput(MovementType_t dir, float delta) {
-        float vel = speed * delta;
+    void processKeyboardInput(MovementType_t dir, float delta, bool boost) {
+        float vel = speed * (boost ? boostScale : 1.f) * delta ;
         if (dir == MOVE_FORWARD) {
             pos += front * vel;
         } else if (dir == MOVE_BACKWARD) {
@@ -79,6 +81,14 @@ public:
         yaw += deltaX * sensitivity;
         pitch += deltaY * sensitivity;
         pitch = std::clamp(pitch, -89.f, 89.f);
+        updateCameraVectors();
+    }
+
+    void apply(glm::vec3 pos, glm::quat orientation) {
+        this->pos = pos;
+        pitch = glm::degrees(glm::pitch(orientation));
+        yaw = glm::degrees(glm::yaw(orientation));
+        SPDLOG_DEBUG("yaw: {}, pitch: {}", yaw, pitch);
         updateCameraVectors();
     }
 

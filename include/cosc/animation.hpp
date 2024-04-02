@@ -1,6 +1,5 @@
 #pragma once
 #include "cosc/camera.hpp"
-#include <cstddef>
 #include <vector>
 namespace cosc {
 
@@ -8,14 +7,14 @@ namespace cosc {
 class CameraAnimation {
 public:
     /// Beginning camera pose
-    CameraPose poseBegin;
+    CameraPose begin;
     /// Ending camera pose
-    CameraPose poseEnd;
-    /// Interpolation time in seconds
-    float timeSeconds;
+    CameraPose end;
+    // Duration of the animation in seconds
+    float duration;
 
     explicit CameraAnimation(const CameraPose &poseBegin, const CameraPose &poseEnd, float time) :
-        poseBegin(poseBegin), poseEnd(poseEnd), timeSeconds(time) {};
+        begin(poseBegin), end(poseEnd), duration(time) {};
 };
 
 /// Manages a camera with a set of animations.
@@ -29,14 +28,15 @@ public:
 
     void update(float delta);
 
-    void setRunning(bool running);
-
 private:
     Camera &camera;
     std::vector<CameraAnimation> animations{};
-    bool running;
-    size_t currentAnimation;
-    float totalDelta;
+    /// True when we are advancing animations
+    bool nextAnimation = true;
+    /// Elapsed time in this animation
+    float elapsed;
+    /// Current animation index
+    int curIdx = -1; // it will be incremented to 0 on the first run this way, kinda hacky
 };
 
 }

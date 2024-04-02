@@ -13,9 +13,9 @@
 #include <SDL_audio.h>
 #include <chrono>
 #include <glm/ext/matrix_clip_space.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <spdlog/spdlog.h>
 #include "cosc/song_data.hpp"
-#include <random>
 
 static constexpr int WIDTH = 1600;
 static constexpr int HEIGHT = 900;
@@ -28,9 +28,9 @@ std::vector<cosc::Model> barModels;
 /// Capture cursor
 bool isCursorCapture = true;
 /// Freecam: Allows free movement for debugging
-bool isFreeCam = true;
-/// SDL event loop control
-bool shouldQuit = false;
+bool isFreeCam = false;
+/// Application status
+cosc::AppStatus appStatus = cosc::AppStatus::RUNNING;
 
 /// Last frame delta time (seconds)
 float delta;
@@ -52,10 +52,27 @@ static void constructBars(const cosc::SongData &songData, const std::string &dat
         model.pos.x = BAR_SPACING * i;
         // initial uniform scaling
         model.scale = glm::vec3(BAR_SCALING, BAR_SCALING, BAR_SCALING);
-        model.scale.z *= 2;
+        // make the bars a bit wider
+        model.scale.z *= BAR_WIDTH_MULT;
+        model.scale.x *= BAR_WIDTH_MULT;
+        // y is of course scaled by the visualiser itself
 
         barModels.push_back(model);
     }
+}
+
+static void addAnimations() {
+    using namespace cosc;
+
+    // clang-format off
+    animationManager.addAnimation(
+        CameraAnimation(
+            CameraPose(glm::vec3(-8.7759, 2.1551, 13.2008), glm::quat(0.9307, -0.0602, -0.3601, -0.0233)),
+            CameraPose(glm::vec3(18.6980, 2.0855, 12.6546), glm::quat(0.4646, -0.0300, -0.8831, -0.0571)),
+            5.f
+        )
+    );
+    // clang-format on
 }
 
 /// Poll SDL events
@@ -63,17 +80,14 @@ static void pollInputs() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
-            shouldQuit = true;
+            appStatus = cosc::AppStatus::QUIT;
         }
         if (event.type == SDL_KEYUP) {
             if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
                 // press escape or close window to quit
-                shouldQuit = true;
+                appStatus = cosc::AppStatus::QUIT;
             }
-            if (event.key.keysym.scancode == SDL_SCANCODE_G) {
-                SPDLOG_INFO("Camera position: {} {} {}", camera.pos.x, camera.pos.y, camera.pos.z);
-            }
-            if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+       if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
                 isCursorCapture = !isCursorCapture;
                 SDL_SetRelativeMouseMode(isCursorCapture ? SDL_TRUE : SDL_FALSE);
                 SPDLOG_INFO("Toggle cursor capture");
@@ -82,29 +96,36 @@ static void pollInputs() {
                 isFreeCam = !isFreeCam;
                 SPDLOG_INFO("Toggle freecam");
             }
-            if (event.key.keysym.scancode == SDL_SCANCODE_C) {
-                SPDLOG_INFO("Camera pos:\nx: {}, y: {}, z: {}", camera.pos.x, camera.pos.y, camera.pos.z);
+            if (event.key.keysym.scancode == SDL_SCANCODE_G) {
+                // convert euler angles to quaternion: https://gamedev.stackexchange.com/a/13441/72826
+                // order is pitch, yaw, roll
+                auto angle = glm::quat(glm::vec3(glm::radians(camera.pitch), glm::radians(camera.yaw), 0.f));
+
+                SPDLOG_INFO("CameraPose(glm::vec3({:.4f}, {:.4f}, {:.4f}), "
+                            "glm::quat({:.4f}, {:.4f}, {:.4f}, {:.4f}))",
+                            camera.pos.x, camera.pos.y, camera.pos.z, angle.w, angle.x, angle.y, angle.z);
             }
         }
-        if (event.type == SDL_MOUSEMOTION && isCursorCapture && isFreeCam) {
+        if (event.type == SDL_MOUSEMOTION && isCursorCapture && isFreeCam && cosc::isNotInIntro(appStatus)) {
             camera.processMouseInput(event.motion.xrel, -event.motion.yrel);
         }
     }
 
     // process continuous held down keys
     auto keyState = SDL_GetKeyboardState(NULL);
+    bool boost = keyState[SDL_SCANCODE_LSHIFT];
     if (isCursorCapture) {
         if (keyState[SDL_SCANCODE_W]) {
-            camera.processKeyboardInput(cosc::MOVE_FORWARD, delta);
+            camera.processKeyboardInput(cosc::MOVE_FORWARD, delta, boost);
         }
         if (keyState[SDL_SCANCODE_A]) {
-            camera.processKeyboardInput(cosc::MOVE_LEFT, delta);
+            camera.processKeyboardInput(cosc::MOVE_LEFT, delta, boost);
         }
         if (keyState[SDL_SCANCODE_S]) {
-            camera.processKeyboardInput(cosc::MOVE_BACKWARD, delta);
+            camera.processKeyboardInput(cosc::MOVE_BACKWARD, delta, boost);
         }
         if (keyState[SDL_SCANCODE_D]) {
-            camera.processKeyboardInput(cosc::MOVE_RIGHT, delta);
+            camera.processKeyboardInput(cosc::MOVE_RIGHT, delta, boost);
         }
     }
 }
@@ -153,7 +174,7 @@ int main(int argc, char *argv[]) {
         SPDLOG_ERROR("Failed to initialise SDL audio: {}", SDL_GetError());
         return 1;
     }
-    SPDLOG_INFO("Obtained audio config with freq {} Hz, format {}, channels {}, samples {}", obtained.freq,
+    SPDLOG_DEBUG("Obtained audio config with freq {} Hz, format {}, channels {}, samples {}", obtained.freq,
         obtained.format, obtained.channels, obtained.samples);
 
     // request OpenGL 4.5, double buffering, and a depth buffer
@@ -177,9 +198,8 @@ int main(int argc, char *argv[]) {
         = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 #else
-    SDL_Window *window
-        = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", 0,
-            0, 0, 0, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP);
+    SDL_Window *window = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", 0, 0, 0, 0,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP);
 #endif
     if (window == nullptr) {
         SPDLOG_ERROR("Failed to create window: {}", SDL_GetError());
@@ -209,8 +229,10 @@ int main(int argc, char *argv[]) {
 
     // setup our custom GL objects
     constructBars(songData, dataDir);
+    addAnimations();
     cosc::Cubemap skybox(dataDir, "skybox");
     cosc::Shader barShader(dataDir / "bar.vert.glsl", dataDir / "bar.frag.glsl");
+    cosc::Shader quadShader(dataDir / "quad.vert.glsl", dataDir / "quad.frag.glsl");
 
     // basically capture mouse, for FPS controls
     // note this is different from SDL_CaptureMouse though, but we are emulating the behaviour of what, for
@@ -226,14 +248,14 @@ int main(int argc, char *argv[]) {
     camera.pos.x = 3.7500107;
     camera.pos.z = 7.958207;
 
-    while (!shouldQuit) {
+    while (cosc::isAppRunning(appStatus)) {
         auto begin = std::chrono::steady_clock::now();
 
         // process SDL input
         pollInputs();
 
         // update camera animations
-        if (!isFreeCam) {
+        if (!isFreeCam && cosc::isNotInIntro(appStatus)) {
             animationManager.update(delta);
         }
 
@@ -261,7 +283,6 @@ int main(int argc, char *argv[]) {
             auto scale = cosc::util::mapRange(0., 255., BAR_MIN_HEIGHT, BAR_MAX_HEIGHT, barHeight);
             // apply scale, also applying our baseline BAR_SCALING factor!
             bar.scale.y = scale * BAR_SCALING;
-            //bar.pos.y = scale;
             barIdx++;
 
             // now update transforms, and off to the GPU we go!
