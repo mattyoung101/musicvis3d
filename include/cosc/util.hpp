@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 #define MUTE 0
 
 /// If true, run the app in fullscreen
-#define FULLSCREEN 0
+#define FULLSCREEN 1
 
 /// If true, do wireframe rendering
 #define WIREFRAME 0

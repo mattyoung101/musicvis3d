@@ -27,7 +27,8 @@ void cosc::CameraAnimationManager::update(float delta) {
     auto pos = glm::mix(anim.begin.pos, anim.end.pos, progress);
     // slerp angle
     auto orientation = glm::slerp(anim.begin.orientation, anim.end.orientation, progress);
-    camera.apply(pos, orientation);
+    camera.setEyePoint(pos);
+    camera.setOrientation(orientation);
 
     elapsed += delta;
 }

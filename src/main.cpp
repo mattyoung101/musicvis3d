@@ -20,7 +20,7 @@
 static constexpr int WIDTH = 1600;
 static constexpr int HEIGHT = 900;
 
-cosc::Camera camera;
+cosc::CameraPersp camera;
 cosc::CameraAnimationManager animationManager(camera);
 
 /// List of bar models
@@ -65,13 +65,29 @@ static void addAnimations() {
     using namespace cosc;
 
     // clang-format off
-    animationManager.addAnimation(
+    animationManager.addAnimations({
         CameraAnimation(
-            CameraPose(glm::vec3(-8.7759, 2.1551, 13.2008), glm::quat(0.9307, -0.0602, -0.3601, -0.0233)),
-            CameraPose(glm::vec3(18.6980, 2.0855, 12.6546), glm::quat(0.4646, -0.0300, -0.8831, -0.0571)),
+            CameraPose(glm::vec3(5.8471, 9.6994, 38.2727), glm::quat(0.9874, -0.1557, -0.0280, -0.0044)),
+            CameraPose(glm::vec3(7.0729, 0.8221, 12.5933), glm::quat(0.9998, -0.0140, -0.0130, -0.0002)),
             5.f
+        ),
+        CameraAnimation(
+            CameraPose(glm::vec3(-7.8656, 0.0000, 11.5408), glm::quat(0.9156, 0.0051, -0.4020, 0.0022)),
+            CameraPose(glm::vec3(22.7046, 0.0000, 10.8279), glm::quat(0.9193, 0.0051, 0.3935, -0.0022)),
+
+            10.f
+        ),
+        CameraAnimation(
+            CameraPose(glm::vec3(0.0428, 0.7932, 7.3945), glm::quat(0.9940, -0.0431, -0.1007, -0.0044)),
+            CameraPose(glm::vec3(17.3785, 0.7932, 15.6179), glm::quat(0.9738, -0.0313, 0.2251, 0.0072)),
+            10.f
+        ),
+        CameraAnimation(
+            CameraPose(glm::vec3(-1.4514, -4.1163, 9.5621), glm::quat(0.9471, 0.1828, -0.2591, 0.0500)),
+            CameraPose(glm::vec3(14.7786, -1.4914, 8.8891), glm::quat(0.9655, 0.0778, 0.2476, -0.0199)),
+            10.f
         )
-    );
+    });
     // clang-format on
 }
 
@@ -87,7 +103,7 @@ static void pollInputs() {
                 // press escape or close window to quit
                 appStatus = cosc::AppStatus::QUIT;
             }
-       if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+       if (event.key.keysym.scancode == SDL_SCANCODE_C) {
                 isCursorCapture = !isCursorCapture;
                 SDL_SetRelativeMouseMode(isCursorCapture ? SDL_TRUE : SDL_FALSE);
                 SPDLOG_INFO("Toggle cursor capture");
@@ -99,11 +115,12 @@ static void pollInputs() {
             if (event.key.keysym.scancode == SDL_SCANCODE_G) {
                 // convert euler angles to quaternion: https://gamedev.stackexchange.com/a/13441/72826
                 // order is pitch, yaw, roll
-                auto angle = glm::quat(glm::vec3(glm::radians(camera.pitch), glm::radians(camera.yaw), 0.f));
+                auto angle = camera.getOrientation();
+                auto pos = camera.getEyePoint();
 
                 SPDLOG_INFO("CameraPose(glm::vec3({:.4f}, {:.4f}, {:.4f}), "
                             "glm::quat({:.4f}, {:.4f}, {:.4f}, {:.4f}))",
-                            camera.pos.x, camera.pos.y, camera.pos.z, angle.w, angle.x, angle.y, angle.z);
+                            pos.x, pos.y, pos.z, angle.w, angle.x, angle.y, angle.z);
             }
         }
         if (event.type == SDL_MOUSEMOTION && isCursorCapture && isFreeCam && cosc::isNotInIntro(appStatus)) {
@@ -126,6 +143,12 @@ static void pollInputs() {
         }
         if (keyState[SDL_SCANCODE_D]) {
             camera.processKeyboardInput(cosc::MOVE_RIGHT, delta, boost);
+        }
+        if (keyState[SDL_SCANCODE_SPACE]) {
+            camera.processKeyboardInput(cosc::MOVE_UP, delta, boost);
+        }
+        if (keyState[SDL_SCANCODE_LCTRL]) {
+            camera.processKeyboardInput(cosc::MOVE_DOWN, delta, boost);
         }
     }
 }
@@ -228,6 +251,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     // setup our custom GL objects
+    //camera = cosc::CameraPersp(realWidth, realHeight, 45.f);
     constructBars(songData, dataDir);
     addAnimations();
     cosc::Cubemap skybox(dataDir, "skybox");
@@ -245,8 +269,11 @@ int main(int argc, char *argv[]) {
 
     // manually calculated :skull:
     // x: 3.7500107, y: 0, z: 7.958207
-    camera.pos.x = 3.7500107;
-    camera.pos.z = 7.958207;
+    camera.setEyePoint(glm::vec3(3.7500107f, 0.f, 7.958207));
+    camera.lookAt(glm::vec3(0.f, 0.f, 0.f));
+    camera.setFov(65.f);
+    camera.setNearClip(0.1f);
+    camera.setFarClip(200.0f);
 
     while (cosc::isAppRunning(appStatus)) {
         auto begin = std::chrono::steady_clock::now();
@@ -267,9 +294,9 @@ int main(int argc, char *argv[]) {
         barShader.use();
 
         // push camera matrices to vertex shader (model transform is pushed later in draw)
-        barShader.setMat4("projection", camera.projectionMatrix(realWidth, realHeight));
-        barShader.setMat4("view", camera.viewMatrix());
-        barShader.setVec3("viewPos", camera.pos);
+        barShader.setMat4("projection", camera.getProjectionMatrix());
+        barShader.setMat4("view", camera.getViewMatrix());
+        barShader.setVec3("viewPos", camera.getEyePoint());
 
         // current bar we're editing
         size_t barIdx = 0;
@@ -291,7 +318,7 @@ int main(int argc, char *argv[]) {
         }
 
         // draw skybox!
-        skybox.draw(camera, realWidth, realHeight);
+        skybox.draw(camera);
 
         SDL_GL_SwapWindow(window);
 

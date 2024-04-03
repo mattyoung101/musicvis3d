@@ -107,16 +107,16 @@ cosc::Cubemap::Cubemap(const fs::path &dataDir, const fs::path &cubeMapDir)
     shader.setInt("skybox", 0);
 }
 
-void cosc::Cubemap::draw(const Camera &camera, int screenWidth, int screenHeight) {
+void cosc::Cubemap::draw(const Camera &camera) {
     // when drawing last, we change the depth test so that it passes when values are <= buffer content
     // TODO what does this really do
     glDepthFunc(GL_LEQUAL);
     shader.use();
 
     // remove translation from the view matrix - similar to what we do in basic lighting
-    auto view = glm::mat4(glm::mat3(camera.viewMatrix()));
+    auto view = glm::mat4(glm::mat3(camera.getViewMatrix()));
     shader.setMat4("view", view);
-    shader.setMat4("projection", camera.projectionMatrix(screenWidth, screenHeight));
+    shader.setMat4("projection", camera.getProjectionMatrix());
 
     // draw skybox cube
     glBindVertexArray(vao);

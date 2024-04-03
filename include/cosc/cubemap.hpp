@@ -15,7 +15,7 @@ public:
 
     /// Draws using the internal managed shader.
     /// MUST BE CALLED AT THE END OF THE SCENE!
-    void draw(const Camera &camera, int screenWidth, int screenHeight);
+    void draw(const Camera &camera);
 
 private:
     Shader shader;
