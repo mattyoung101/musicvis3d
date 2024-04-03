@@ -17,8 +17,10 @@
 #include <spdlog/spdlog.h>
 #include "cosc/song_data.hpp"
 
+#if FULLSCREEN == 0
 static constexpr int WIDTH = 1600;
 static constexpr int HEIGHT = 900;
+#endif
 
 cosc::CameraPersp camera;
 cosc::CameraAnimationManager animationManager(camera);
@@ -69,6 +71,11 @@ static void addAnimations() {
         CameraAnimation(
             CameraPose(glm::vec3(5.8471, 9.6994, 38.2727), glm::quat(0.9874, -0.1557, -0.0280, -0.0044)),
             CameraPose(glm::vec3(7.0729, 0.8221, 12.5933), glm::quat(0.9998, -0.0140, -0.0130, -0.0002)),
+            8.f
+        ),
+        CameraAnimation(
+            CameraPose(glm::vec3(-18.6687, 2.6341, -26.7555), glm::quat(0.3377, -0.0160, -0.9401, -0.0447)),
+            CameraPose(glm::vec3(-7.5872, 2.6341, 28.1043), glm::quat(0.9736, -0.0354, -0.2255, -0.0082)),
             5.f
         ),
         CameraAnimation(
@@ -85,6 +92,21 @@ static void addAnimations() {
         CameraAnimation(
             CameraPose(glm::vec3(-1.4514, -4.1163, 9.5621), glm::quat(0.9471, 0.1828, -0.2591, 0.0500)),
             CameraPose(glm::vec3(14.7786, -1.4914, 8.8891), glm::quat(0.9655, 0.0778, 0.2476, -0.0199)),
+            10.f
+        ),
+        CameraAnimation(
+            CameraPose(glm::vec3(26.3049, 4.7166, 1.8017), glm::quat(0.6935, -0.1665, 0.6815, 0.1636)),
+            CameraPose(glm::vec3(16.4088, 0.9681, 10.5837), glm::quat(0.9584, -0.0264, 0.2839, 0.0078)),
+            10.f
+        ),
+        CameraAnimation(
+            CameraPose(glm::vec3(7.3091, -16.7948, 16.1069), glm::quat(0.9257, 0.3782, -0.0047, 0.0019)),
+            CameraPose(glm::vec3(7.1402, 18.2470, 16.4410), glm::quat(0.9196, -0.3929, -0.0047, -0.0020)),
+            10.f
+        ),
+        CameraAnimation(
+            CameraPose(glm::vec3(6.7887, -0.4598, 16.6968), glm::quat(0.9985, 0.0544, 0.0014, -0.0001)),
+            CameraPose(glm::vec3(6.6380, -10.7140, 27.1954), glm::quat(0.9787, 0.2052, -0.0082, 0.0017)),
             10.f
         )
     });
@@ -271,7 +293,7 @@ int main(int argc, char *argv[]) {
     // x: 3.7500107, y: 0, z: 7.958207
     camera.setEyePoint(glm::vec3(3.7500107f, 0.f, 7.958207));
     camera.lookAt(glm::vec3(0.f, 0.f, 0.f));
-    camera.setFov(65.f);
+    camera.setFov(55.f);
     camera.setNearClip(0.1f);
     camera.setFarClip(200.0f);
 

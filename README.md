@@ -66,8 +66,12 @@ This project makes use of the following open-source libraries:
 - dr_flac: Public domain
 - Tweeny: MIT licence
 - stb_image: Public domain
+- `camera.cpp`/`camera.hpp` derived from Cinder Project: BSD 2-Clause
+    - Upstream: https://github.com/cinder/Cinder/blob/master/src/cinder/Camera.cpp
 
-Much of this project is based on code from LearnOpenGL https://learnopengl.com/
+Some code based on code from LearnOpenGL https://learnopengl.com/ - however, given the generic nature of the
+code (there is really only one way to make a GL shader), I do not believe that their CC-BY-NC licence applies
+to this repo.
 
 ## Assets used
 The space skybox was generated from: https://tools.wwwtyro.net/space-3d/index.html

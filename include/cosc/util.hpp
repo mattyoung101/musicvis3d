@@ -29,7 +29,7 @@ constexpr float BAR_WIDTH_MULT = 2.0;
 constexpr float BAR_MIN_HEIGHT = 1.0;
 
 /// Max height for an extended bar (multiplied by BAR_SCALING)
-constexpr float BAR_MAX_HEIGHT = 30.;
+constexpr float BAR_MAX_HEIGHT = 50.;
 
 /// Intro slide time in seconds
 constexpr float INTRO_SLIDE_TIME = 1.5;

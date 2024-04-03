@@ -57,7 +57,12 @@ public:
 */
 
 // Upstream: https://github.com/cinder/Cinder/blob/master/include/cinder/Camera.h
-// Changes by Matt (2024): removed
+// Changes by Matt (2024) for COSC3000:
+// - Reformatted code
+// - Removed all Sphere and Ray code
+// - Added camera controller
+// - Remove orthographic and 3D cameras
+// - Use glm namespace inline
 
 //! Base Camera class, which manages the projection and view matrices for a 3-dimensional scene, as well as
 //! providing mapping functionality.
@@ -281,6 +286,11 @@ protected:
 private:
     void moveForward(float distance);
     void moveRight(float distance);
+
+    /// Current pitch in degrees
+    float pitch = 0.f;
+    /// Current yaw in degrees
+    float yaw = 0.f;
 };
 
 //! A perspective Camera.

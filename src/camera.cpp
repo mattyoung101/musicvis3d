@@ -14,6 +14,31 @@ constexpr float BOOST_SCALE = 3.0f;
 constexpr float SPEED = 2.5f;
 constexpr float POINTER_SPEED = 1.6f;
 
+/*
+ Copyright (c) 2012, The Cinder Project: http://libcinder.org All rights reserved.
+ This code is intended for use with the Cinder C++ library: http://libcinder.org
+
+ Portions of this code (C) Paul Houx
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+ the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, this list of conditions and
+    the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and
+    the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+ WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+*/
+
 // https://github.com/cinder/Cinder/blob/093ea5f81523e7fc528c5787a48444f037e6b08f/src/cinder/Matrix.cpp#L134
 inline glm::mat4 alignZAxisWithTarget(vec3 targetDir, vec3 upDir) {
     // Ensure that the target direction is non-zero.
@@ -50,6 +75,9 @@ inline glm::mat4 alignZAxisWithTarget(vec3 targetDir, vec3 upDir) {
 
     return glm::make_mat4(v);
 }
+
+// Upstream: https://github.com/cinder/Cinder/blob/master/src/cinder/Camera.cpp
+// Note: See camera.hpp for changes by Matt (2024) for COSC3000
 
 void Camera::setEyePoint(const vec3 &eyePoint) {
     mEyePoint = eyePoint;
@@ -210,7 +238,6 @@ void Camera::getClipCoordinates(
         = mEyePoint + clipDist * viewDirection + ratio * (mFrustumBottom * mV) + ratio * (mFrustumRight * mU);
 }
 
-
 // Based on my other code:
 // https://github.com/DECO3801-Segfault-Coredump/hermes/blob/master/core/src/main/kotlin/com/decosegfault/atlas/util/FirstPersonCamController.kt
 // Which in turn is based on ThreeJS pointer lock controls:
@@ -219,7 +246,8 @@ void Camera::getClipCoordinates(
 
 void Camera::moveForward(float distance) {
     auto degrees90 = glm::radians(90.f);
-    auto delta = glm::rotateY(glm::normalize(glm::cross(getViewDirection(), getWorldUp())), degrees90) * distance;
+    auto delta
+        = glm::rotateY(glm::normalize(glm::cross(getViewDirection(), getWorldUp())), degrees90) * distance;
     mEyePoint += delta;
 }
 
@@ -246,26 +274,40 @@ void Camera::processKeyboardInput(MovementType_t dir, float delta, bool boost) {
     dirtyViewCaches();
 }
 
+// Resources consulted:
+// - https://gamedev.stackexchange.com/a/123552/72826
+// - https://gamedev.stackexchange.com/a/183777/72826 (lifesaver)
 void Camera::processMouseInput(float deltaX, float deltaY) {
-    // compute Euler angles
-    auto pitch = glm::degrees(glm::pitch(getOrientation()));
-    auto yaw = glm::degrees(glm::yaw(getOrientation()));
-    //SPDLOG_DEBUG("before pitch: {}, yaw: {}", pitch, yaw);
-
-    // rotate
+    // update Euler angles
     pitch += deltaY * 0.1f * POINTER_SPEED;
     yaw += -deltaX * 0.1f * POINTER_SPEED;
 
     // clamp pitch -89 degrees to 89 degrees
     pitch = std::clamp(pitch, -89.f, 89.f);
-    // FIXME this shouldn't be required but otherwise it explodes
-    yaw = std::clamp(yaw, -89.f, 89.f);
-    //SPDLOG_DEBUG("after pitch: {}, yaw: {}", pitch, yaw);
 
     // update quaternion
     // order is: pitch, yaw, roll https://gamedev.stackexchange.com/a/13441/72826
     auto newQuat = glm::quat(glm::vec3(glm::radians(pitch), glm::radians(yaw), 0.f));
     setOrientation(newQuat);
+
+#if 0
+    auto current = getOrientation();
+
+    // apply yaw
+    float yawAmount = glm::radians(-deltaX * 0.1f * POINTER_SPEED);
+    current = glm::rotate(current, yawAmount, glm::vec3(0.f, 1.f, 0.f));
+
+    // apply pitch
+    float pitchAmount = glm::radians(deltaY * 0.1f * POINTER_SPEED);
+    current = glm::rotate(current, pitchAmount, glm::vec3(1.f, 0.f, 0.f));
+
+    // force roll back to 0
+    // float rollAmount = glm::roll(current);
+    // current = glm::rotate(current, -rollAmount, glm::vec3(0.f, 0.f, 1.f));
+
+    // update
+    setOrientation(current);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
