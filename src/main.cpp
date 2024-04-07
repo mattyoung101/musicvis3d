@@ -137,7 +137,7 @@ static void pollInputs() {
                 // press escape or close window to quit
                 appStatus = cosc::AppStatus::QUIT;
             }
-       if (event.key.keysym.scancode == SDL_SCANCODE_C) {
+            if (event.key.keysym.scancode == SDL_SCANCODE_C) {
                 isCursorCapture = !isCursorCapture;
                 SDL_SetRelativeMouseMode(isCursorCapture ? SDL_TRUE : SDL_FALSE);
                 SPDLOG_INFO("Toggle cursor capture");
@@ -154,7 +154,7 @@ static void pollInputs() {
 
                 SPDLOG_INFO("CameraPose(glm::vec3({:.4f}, {:.4f}, {:.4f}), "
                             "glm::quat({:.4f}, {:.4f}, {:.4f}, {:.4f}))",
-                            pos.x, pos.y, pos.z, angle.w, angle.x, angle.y, angle.z);
+                    pos.x, pos.y, pos.z, angle.w, angle.x, angle.y, angle.z);
             }
             if (event.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
                 animationManager.forceAdvanceAnimation();
@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     // setup our custom GL objects
-    //camera = cosc::CameraPersp(realWidth, realHeight, 45.f);
+    // camera = cosc::CameraPersp(realWidth, realHeight, 45.f);
     constructBars(songData, dataDir);
     addAnimations();
     cosc::Cubemap skybox(dataDir, "skybox");
@@ -334,8 +334,10 @@ int main(int argc, char *argv[]) {
                     SPDLOG_INFO("Exiting intro!");
                     appStatus = cosc::AppStatus::RUNNING;
                 }
+                // FIXME: we should do the equivalent of "goto nextframe" here and not draw
             }
 
+            // only draw if we're still in the intro (to fix a bug)
             introSlideTimer += delta;
             intro.draw(introSlide);
         } else {

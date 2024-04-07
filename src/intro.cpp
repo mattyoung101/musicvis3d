@@ -33,16 +33,16 @@ cosc::IntroManager::IntroManager(const fs::path &dataDir)
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) (2 * sizeof(float)));
 
     SPDLOG_DEBUG("Loading intro textures");
     stbi_set_flip_vertically_on_load(true);
 
     for (size_t i = 0; i < NUM_SLIDES; i++) {
         auto path = dataDir / ("slide" + std::to_string(i) + ".png");
-        //auto path = dataDir / "intro_debug.png";
+        // auto path = dataDir / "intro_debug.png";
         SPDLOG_DEBUG("Loading slide: {}", path.string());
         data = stbi_load(path.c_str(), &width, &height, &channels, 0);
         if (data == nullptr) {
@@ -58,7 +58,8 @@ cosc::IntroManager::IntroManager(const fs::path &dataDir)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
         // has been copied to the GPU presumably, so we can free it here
-        //stbi_image_free(data);
+        stbi_image_free(data);
+        SPDLOG_DEBUG("Allocated texture id {}", texId);
 
         textureIds.push_back(texId);
     }
@@ -67,18 +68,20 @@ cosc::IntroManager::IntroManager(const fs::path &dataDir)
 }
 
 void cosc::IntroManager::draw(size_t slideNumber) {
-    if (slideNumber > textureIds.size()) {
-        SPDLOG_WARN("Requested slide number {} > textures array size {} - will not draw!", slideNumber,
+    if (slideNumber > textureIds.size() - 1) {
+        SPDLOG_WARN("Requested slide number {} >= textures array size {} - will not draw!", slideNumber,
             textureIds.size());
         return;
     }
+
+    // SPDLOG_DEBUG("Drawing slide number {} with texture id {}", slideNumber, textureIds[slideNumber]);
 
     shader.use();
     glBindVertexArray(vao);
 
     // bind the texture that corresponds to the slide number
     auto texId = textureIds[slideNumber];
-    shader.setInt("screenTextureeee", texId);
+    // shader.setInt("screenTexture", 0);
     glBindTexture(GL_TEXTURE_2D, texId);
 
     // draw the quad
