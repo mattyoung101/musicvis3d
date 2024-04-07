@@ -63,6 +63,8 @@ static void constructBars(const cosc::SongData &songData, const std::string &dat
     }
 }
 
+/// Adds animations to the visualiser
+/// These are computed by using freecam mode and hitting 'g', which prints the CameraPose to console.
 static void addAnimations() {
     using namespace cosc;
 
@@ -76,7 +78,7 @@ static void addAnimations() {
         CameraAnimation(
             CameraPose(glm::vec3(-18.6687, 2.6341, -26.7555), glm::quat(0.3377, -0.0160, -0.9401, -0.0447)),
             CameraPose(glm::vec3(-7.5872, 2.6341, 28.1043), glm::quat(0.9736, -0.0354, -0.2255, -0.0082)),
-            5.f
+            3.f
         ),
         CameraAnimation(
             CameraPose(glm::vec3(-7.8656, 0.0000, 11.5408), glm::quat(0.9156, 0.0051, -0.4020, 0.0022)),
@@ -108,6 +110,11 @@ static void addAnimations() {
             CameraPose(glm::vec3(6.7887, -0.4598, 16.6968), glm::quat(0.9985, 0.0544, 0.0014, -0.0001)),
             CameraPose(glm::vec3(6.6380, -10.7140, 27.1954), glm::quat(0.9787, 0.2052, -0.0082, 0.0017)),
             10.f
+        ),
+        CameraAnimation(
+            CameraPose(glm::vec3(9.0587, -31.1216, 66.6940), glm::quat(0.9826, 0.1846, 0.0220, -0.0041)),
+            CameraPose(glm::vec3(-4.8753, 15.8279, 15.4221), glm::quat(0.8993, -0.3416, -0.2552, -0.0969)),
+            7.f
         )
     });
     // clang-format on
@@ -143,6 +150,9 @@ static void pollInputs() {
                 SPDLOG_INFO("CameraPose(glm::vec3({:.4f}, {:.4f}, {:.4f}), "
                             "glm::quat({:.4f}, {:.4f}, {:.4f}, {:.4f}))",
                             pos.x, pos.y, pos.z, angle.w, angle.x, angle.y, angle.z);
+            }
+            if (event.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
+                animationManager.forceAdvanceAnimation();
             }
         }
         if (event.type == SDL_MOUSEMOTION && isCursorCapture && isFreeCam && cosc::isNotInIntro(appStatus)) {
@@ -278,7 +288,6 @@ int main(int argc, char *argv[]) {
     addAnimations();
     cosc::Cubemap skybox(dataDir, "skybox");
     cosc::Shader barShader(dataDir / "bar.vert.glsl", dataDir / "bar.frag.glsl");
-    cosc::Shader quadShader(dataDir / "quad.vert.glsl", dataDir / "quad.frag.glsl");
 
     // basically capture mouse, for FPS controls
     // note this is different from SDL_CaptureMouse though, but we are emulating the behaviour of what, for

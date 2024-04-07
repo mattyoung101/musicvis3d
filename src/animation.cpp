@@ -1,7 +1,8 @@
 #include "cosc/animation.hpp"
 #include <glm/gtc/quaternion.hpp>
 #include <spdlog/spdlog.h>
-#include "cosc/lib/tweeny-3.2.0.h"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/easing.hpp>
 
 void cosc::CameraAnimationManager::update(float delta) {
     if (animations.empty()) {
@@ -25,6 +26,12 @@ void cosc::CameraAnimationManager::update(float delta) {
 
     // lerp position
     auto pos = glm::mix(anim.begin.pos, anim.end.pos, progress);
+
+    // tweening... doesn't look as good as I was hoping for :(
+    //auto pos = glm::vec3(x, y, z);
+    // auto ease = glm::sineEaseOut(progress);
+    // auto pos = glm::mix(anim.begin.pos, anim.end.pos, ease);
+
     // slerp angle
     auto orientation = glm::slerp(anim.begin.orientation, anim.end.orientation, progress);
     camera.setEyePoint(pos);

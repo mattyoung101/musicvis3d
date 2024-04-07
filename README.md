@@ -64,7 +64,6 @@ This project makes use of the following open-source libraries:
 - spdlog: MIT licence
 - Cap'n Proto: MIT licence
 - dr_flac: Public domain
-- Tweeny: MIT licence
 - stb_image: Public domain
 - `camera.cpp`/`camera.hpp` derived from Cinder Project: BSD 2-Clause
     - Upstream: https://github.com/cinder/Cinder/blob/master/src/cinder/Camera.cpp

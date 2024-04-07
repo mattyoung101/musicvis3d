@@ -34,6 +34,11 @@ public:
 
     void update(float delta);
 
+    void forceAdvanceAnimation() {
+        SPDLOG_INFO("Forcing advance to next animation");
+        nextAnimation = true;
+    }
+
 private:
     Camera &camera;
     std::vector<CameraAnimation> animations{};
