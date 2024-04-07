@@ -1,6 +1,7 @@
 #include "cosc/animation.hpp"
 #include "cosc/camera.hpp"
 #include "cosc/cubemap.hpp"
+#include "cosc/intro.hpp"
 #include "cosc/model.hpp"
 #include "cosc/shader.hpp"
 #include "cosc/util.hpp"
@@ -32,12 +33,16 @@ bool isCursorCapture = true;
 /// Freecam: Allows free movement for debugging
 bool isFreeCam = false;
 /// Application status
-cosc::AppStatus appStatus = cosc::AppStatus::RUNNING;
+cosc::AppStatus appStatus = cosc::AppStatus::INTRO;
+/// Which intro slide we're playing
+size_t introSlide = 0;
 
 /// Last frame delta time (seconds)
 float delta;
 //// Total elapsed time (seconds)
 float deltaSum;
+
+float introSlideTimer = 0.f;
 
 /// SDL audio callback
 static void audio_callback(void *userData, uint8_t *stream, int len) {
@@ -288,6 +293,7 @@ int main(int argc, char *argv[]) {
     addAnimations();
     cosc::Cubemap skybox(dataDir, "skybox");
     cosc::Shader barShader(dataDir / "bar.vert.glsl", dataDir / "bar.frag.glsl");
+    cosc::IntroManager intro(dataDir);
 
     // basically capture mouse, for FPS controls
     // note this is different from SDL_CaptureMouse though, but we are emulating the behaviour of what, for
@@ -312,44 +318,62 @@ int main(int argc, char *argv[]) {
         // process SDL input
         pollInputs();
 
-        // update camera animations
-        if (!isFreeCam && cosc::isNotInIntro(appStatus)) {
-            animationManager.update(delta);
-        }
-
         // clear screen
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // enable our shader program (before we push uniforms)
-        barShader.use();
+        if (cosc::isInIntro(appStatus)) {
+            // update slides
+            if (introSlideTimer >= INTRO_SLIDE_TIME) {
+                SPDLOG_DEBUG("Next intro slide (currently {}, will be {})", introSlide, introSlide + 1);
+                introSlideTimer = 0.f;
+                introSlide++;
 
-        // push camera matrices to vertex shader (model transform is pushed later in draw)
-        barShader.setMat4("projection", camera.getProjectionMatrix());
-        barShader.setMat4("view", camera.getViewMatrix());
-        barShader.setVec3("viewPos", camera.getEyePoint());
+                // are we out of intro?
+                if (introSlide >= INTRO_NUM_SLIDES) {
+                    SPDLOG_INFO("Exiting intro!");
+                    appStatus = cosc::AppStatus::RUNNING;
+                }
+            }
 
-        // current bar we're editing
-        size_t barIdx = 0;
-        // current spectrum block
-        // note that songData.blockPos gets updated by mixAudio() (FIXME possible race condition?)
-        auto block = songData.spectrum.getBlocks()[songData.blockPos];
-        for (auto &bar : barModels) {
-            // first, get bar height from 0-255 directly from the Cap'n Proto
-            auto barHeight = block[barIdx];
-            // map that 0 to 255 to BAR_MIN_HEIGHT to BAR_MAX_HEIGHT
-            auto scale = cosc::util::mapRange(0., 255., BAR_MIN_HEIGHT, BAR_MAX_HEIGHT, barHeight);
-            // apply scale, also applying our baseline BAR_SCALING factor!
-            bar.scale.y = scale * BAR_SCALING;
-            barIdx++;
+            introSlideTimer += delta;
+            intro.draw(introSlide);
+        } else {
+            // update camera animations
+            if (!isFreeCam) {
+                animationManager.update(delta);
+            }
 
-            // now update transforms, and off to the GPU we go!
-            bar.applyTransform();
-            bar.draw(barShader);
+            // enable our shader program (before we push uniforms)
+            barShader.use();
+
+            // push camera matrices to vertex shader (model transform is pushed later in draw)
+            barShader.setMat4("projection", camera.getProjectionMatrix());
+            barShader.setMat4("view", camera.getViewMatrix());
+            barShader.setVec3("viewPos", camera.getEyePoint());
+
+            // current bar we're editing
+            size_t barIdx = 0;
+            // current spectrum block
+            // note that songData.blockPos gets updated by mixAudio() (FIXME possible race condition?)
+            auto block = songData.spectrum.getBlocks()[songData.blockPos];
+            for (auto &bar : barModels) {
+                // first, get bar height from 0-255 directly from the Cap'n Proto
+                auto barHeight = block[barIdx];
+                // map that 0 to 255 to BAR_MIN_HEIGHT to BAR_MAX_HEIGHT
+                auto scale = cosc::util::mapRange(0., 255., BAR_MIN_HEIGHT, BAR_MAX_HEIGHT, barHeight);
+                // apply scale, also applying our baseline BAR_SCALING factor!
+                bar.scale.y = scale * BAR_SCALING;
+                barIdx++;
+
+                // now update transforms, and off to the GPU we go!
+                bar.applyTransform();
+                bar.draw(barShader);
+            }
+
+            // draw skybox!
+            skybox.draw(camera);
         }
-
-        // draw skybox!
-        skybox.draw(camera);
 
         SDL_GL_SwapWindow(window);
 

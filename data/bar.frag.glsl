@@ -31,6 +31,10 @@ vec3 inferno(float t) {
     return c0 + t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * (c5 + t * c6)))));
 }
 
+float map(float value, float min1, float max1, float min2, float max2) {
+    return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
+}
+
 // Based on: https://learnopengl.com/Lighting/Basic-Lighting
 
 void main() {
@@ -44,4 +48,7 @@ void main() {
 
     // colour angle based on inferno colourmap
     FragColor = vec4(inferno(angle), 1.0f);
+
+    // float range = map(FragPos.x, 1.0, 50.0, 0.0, 1.0);
+    // FragColor = vec4(turbo(range), 1.0f);
 }

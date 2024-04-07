@@ -1,0 +1,34 @@
+{
+    "rdocCaptureSettings": 1,
+    "settings": {
+        "autoStart": false,
+        "commandLine": "../data Animadrop_Forgotten_Behind_the_Fog",
+        "environment": [
+            {
+                "separator": "Platform style",
+                "type": "Set",
+                "value": "x11",
+                "variable": "SDL_VIDEODRIVER"
+            }
+        ],
+        "executable": "/home/matt/workspace/cosc3000_major/build/musicvis",
+        "inject": false,
+        "numQueuedFrames": 0,
+        "options": {
+            "allowFullscreen": true,
+            "allowVSync": true,
+            "apiValidation": false,
+            "captureAllCmdLists": false,
+            "captureCallstacks": false,
+            "captureCallstacksOnlyDraws": false,
+            "debugOutputMute": true,
+            "delayForDebugger": 0,
+            "hookIntoChildren": false,
+            "refAllResources": false,
+            "softMemoryLimit": 0,
+            "verifyBufferAccess": false
+        },
+        "queuedFrameCap": 0,
+        "workingDir": ""
+    }
+}

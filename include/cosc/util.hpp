@@ -32,15 +32,15 @@ constexpr float BAR_MIN_HEIGHT = 1.0;
 constexpr float BAR_MAX_HEIGHT = 50.;
 
 /// Intro slide time in seconds
-constexpr float INTRO_SLIDE_TIME = 1.5;
+constexpr float INTRO_SLIDE_TIME = 3.0;
+
+constexpr size_t INTRO_NUM_SLIDES = 3;
 
 namespace cosc {
 enum class AppStatus {
-    INTRO_SLIDE1 = 0,
-    INTRO_SLIDE2 = 1,
-    INTRO_SLIDE3 = 2,
-    RUNNING = 3,
-    QUIT = 4
+    INTRO = 1,
+    RUNNING = 2,
+    QUIT = 3
 };
 
 constexpr bool isAppRunning(AppStatus status) {
@@ -49,6 +49,10 @@ constexpr bool isAppRunning(AppStatus status) {
 
 constexpr bool isNotInIntro(AppStatus status) {
     return status >= AppStatus::RUNNING;
+}
+
+constexpr bool isInIntro(AppStatus status) {
+    return status == AppStatus::INTRO;
 }
 
 };

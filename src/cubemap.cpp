@@ -77,7 +77,7 @@ cosc::Cubemap::Cubemap(const fs::path &dataDir, const fs::path &cubeMapDir)
     unsigned char *data;
     int i = 0;
     for (const auto &face : faces) {
-        auto facePath = dataDir / cubeMapDir / (face + ".jpg");
+        auto facePath = dataDir / cubeMapDir / (face + ".png");
 
         // load data from FS
         SPDLOG_DEBUG("Loading face: {} from path: {}", face, facePath.string());
@@ -88,8 +88,7 @@ cosc::Cubemap::Cubemap(const fs::path &dataDir, const fs::path &cubeMapDir)
         SPDLOG_DEBUG("Retrieved a {}x{} image with {} channels", width, height, channels);
 
         // submit to OpenGL
-        // FIXME ideally make this work with PNG RGBA - it's borked, hence we moved to JPEG
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (i++), 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (i++), 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         // has been copied to the GPU presumably, so we can free it here
         stbi_image_free(data);
 
