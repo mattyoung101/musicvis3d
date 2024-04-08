@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
         if (cosc::isInIntro(appStatus)) {
             // update slides
             if (introSlideTimer >= INTRO_SLIDE_TIME) {
-                SPDLOG_DEBUG("Next intro slide (currently {}, will be {})", introSlide, introSlide + 1);
+                SPDLOG_INFO("Next intro slide (currently {}, will be {})", introSlide, introSlide + 1);
                 introSlideTimer = 0.f;
                 introSlide++;
 

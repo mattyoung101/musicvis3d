@@ -22,7 +22,7 @@ distro, you may have to compile from source to get the newer versions (especiall
 not on Linux, you're on your own! In particular, this may be challenging to build on MacOS due to their
 deprecation of OpenGL.
 
-Generate the project using: 
+Generate the project using:
 ```
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release # or Debug
 ```

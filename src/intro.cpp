@@ -58,7 +58,7 @@ cosc::IntroManager::IntroManager(const fs::path &dataDir)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
         // has been copied to the GPU presumably, so we can free it here
-        //stbi_image_free(data);
+        stbi_image_free(data);
 
         textureIds.push_back(texId);
     }
@@ -74,7 +74,6 @@ void cosc::IntroManager::draw(size_t slideNumber) {
     }
 
     shader.use();
-    glBindVertexArray(vao);
 
     // bind the texture that corresponds to the slide number
     auto texId = textureIds[slideNumber];
@@ -82,5 +81,6 @@ void cosc::IntroManager::draw(size_t slideNumber) {
     glBindTexture(GL_TEXTURE_2D, texId);
 
     // draw the quad
+    glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
