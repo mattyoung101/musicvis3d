@@ -16,6 +16,9 @@ namespace fs = std::filesystem;
 /// If true, do wireframe rendering
 #define WIREFRAME 0
 
+/// If true, skip intro
+#define SKIP_INTRO 0
+
 /// Units between bars
 constexpr float BAR_SPACING = 2.5;
 

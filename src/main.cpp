@@ -32,8 +32,12 @@ std::vector<cosc::Model> barModels;
 bool isCursorCapture = true;
 /// Freecam: Allows free movement for debugging
 bool isFreeCam = false;
+#if SKIP_INTRO == 1
+cosc::AppStatus appStatus = cosc::AppStatus::RUNNING;
+#else
 /// Application status
 cosc::AppStatus appStatus = cosc::AppStatus::INTRO;
+#endif
 /// Which intro slide we're playing
 size_t introSlide = 0;
 
