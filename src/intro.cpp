@@ -19,6 +19,9 @@ float quadVertices[] = {
 };
 // clang-format on
 
+
+// TODO Cite LearnOpenGL
+
 cosc::IntroManager::IntroManager(const fs::path &dataDir)
     : shader(cosc::Shader(dataDir / "quad.vert.glsl", dataDir / "quad.frag.glsl")) {
     SPDLOG_INFO("Initialising IntroManager");

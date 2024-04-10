@@ -54,10 +54,12 @@ def filter_freqs(freqs: List[Tuple[float, float]], min: float, max: float) -> Li
     return [x[1] for x in freqs if x[0] >= min and x[0] <= max]
 
 
-def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> List[int]:
+def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> Tuple[float, List[int]]:
     """
     Processes a block of audio samples into a bar spectrogram.
     The output bars are in the range 0..255 and can be fed into the visualiser directly.
+
+    Returns: Tuple(float: Spectral energy, List[int]: Bars)
     """
     # compute periodogram using kaiser windowing function
     # TODO go back to scipy (see obsidian) so we can do DC removal??
@@ -115,6 +117,9 @@ def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> List[int]:
         val = np.interp(mean, [MIN_VOL, MAX_VOL], [0, 255])
         bars.append(val)
 
+    # Compute spectral energy
+    spectral_energy = 0.0
+
     # plot spectrum
     if PLOT and PLOT_FFT:
         plt.semilogx(p.frequencies(), db)
@@ -124,7 +129,7 @@ def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> List[int]:
         for sample in samples:
             plt.axvline(x=sample, color="grey")
 
-    return [int(x) for x in bars]
+    return spectral_energy, [int(x) for x in bars]
 
 
 def main():
@@ -171,7 +176,7 @@ def main():
 
         def animate(i):
             ax.clear()
-            bars = process_block(blocks[i], sampling_rate, ax)
+            spectral_energy, bars = process_block(blocks[i], sampling_rate, ax)
 
             if PLOT and PLOT_BAR:
                 # plot bar graph (final)
@@ -184,13 +189,18 @@ def main():
 
     # process blocks
     all_bars = []
+    energies = []
     for i, block in tqdm(enumerate(blocks), total=len(blocks)):
         # calculate the bars
-        all_bars.append(process_block(block, sampling_rate))
+        spectral_energy, bars = process_block(block, sampling_rate)
+        all_bars.append(bars)
+        energies.append(spectral_energy)
         # print(f"Block {i} bars: {bars}")
         # put the bars into the capnp message
 
     music_vis.blocks = all_bars
+    music_vis.spectralEnergyBlocks = energies
+    music_vis.maxSpectralEnergy = np.max(energies)
 
     # write capnp message
     data_path = Path(f"data/songs/{song_name}/spectrum.bin")
