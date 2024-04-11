@@ -48,8 +48,8 @@
 
 % opening
 \title{\textbf{A 3D music visualisation in OpenGL using the Discrete Fourier Transform}}
-\author{Matt Young \\ s4697249 \\ m.young2@uqconnect.edu.au}
-\date{March 2024}
+\author{Matt Young \\ 46972495 \\ m.young2@uqconnect.edu.au}
+\date{May 2024}
 
 \begin{document}
 \maketitle
@@ -61,7 +61,8 @@
     an almost unlimited number of ways to interpret it and construct a visualisation. In this paper, I
     investigate applying the DFT to construct a semi real-time audio visualisation using OpenGL. The
     visualisation consists of offline spectral data that is rendered in real-time in the form of "bars" with
-    emissive lighting, and a set of pre-programmed camera moves computed via spherical linear interpolation.
+    lighting, and a set of pre-programmed camera moves computed via linear (translation) and
+    spherical-linear (orientation) interpolation.
 \end{abstract}
 
 \tableofcontents
@@ -81,7 +82,8 @@ visualisers": the process of building an often real-time visual representation o
 
 \subsection{Visual inspiration}
 The particular music visualiser I aim to construct is an improved version of the "spectrum of bars" once used
-by Canadian record label Monstercat, shown in Figure \ref{monstercat}. The label has since transitioned away
+by Canadian record label Monstercat, shown in Figure \ref{monstercat}.
+The label has since transitioned away
 from this computational music visualiser, and instead use custom music videos.
 
 \begin{figure}[H]
@@ -97,22 +99,27 @@ from this computational music visualiser, and instead use custom music videos.
 \subsection{Overall description of sub-applications}
 The visualiser itself is developed and tested in a Linux environment, and is split into two sub-applications:
 the visualiser itself (written in C++20), and the analysis script (written in Python). Signal processing is a
-very complex subject, and real-time ("online") signal processing is even more so. Python generally has simpler
-tools to address signal processing problems, such as NumPy and SciPy, so the signal processing part was moved
-offline into a Python script.
+very complex subject, and real-time ("online") signal processing in C++ is even more so. Python generally has
+simpler tools to address signal processing problems, such as NumPy and SciPy, so the signal processing part
+was moved offline into a Python script.
 
 (DIAGRAM)
 
-The analysis script is first run that reads a FLAC (CITATION) audio file, and produces a Cap'n Proto (CITATION)
-encoded binary file containing the necessary data to render a spectrum for the chosen song. Each song consists
-of a directory containing one audio file, \verb|audio.flac|, and one spectral data file, \verb|spectrum.bin|.
-These are stored in the \verb|data| directory. For example: \\
+The analysis script is first run that reads a FLAC \cite{xiphFLACWhat} audio file, and produces a Cap'n Proto
+\cite{capnp} encoded binary file containing the necessary data to render a spectrum for the chosen song. Each
+song consists of a directory containing one audio file, \verb|audio.flac|, and one spectral data file,
+\verb|spectrum.bin|. These are stored in the \verb|data| directory. For example: \\
 \verb|data/songs/LauraBrehm_PureSunlight/{audio.flac},{spectrum.bin}|
 
 (DIRECTORY TREE)
 
-Free Lossless Audio Codec (FLAC) is a lossless audio compression and container format. It was chosen because
-(REASONS).
+Free Lossless Audio Codec (FLAC) is a lossless audio compression and container format. It was mainly selected
+due to its ability to be easy loaded in C++ through open-source libraries like \verb|dr_flac|, the fact that
+it's entirely royalty and patent free, as well as its lossless nature. Although codecs such as MPEG-3 and
+Vorbis are transparent at around 320 Kbps (meaning there are no perceptible differences between the compressed
+codec and uncompressed audio), there may still be subtle artefacts introduced in the spectrum that could be
+picked up by the visualiser. In any case, storing the audio in an uncompressed format introduces very little
+overhead and can always be transcoded later down the track if marginally smaller file size is desired.
 
 Cap'n Proto is a binary serialisation format that is regarded as a faster successor to Protocol Buffers.
 Compared to Protocol Buffers, which are also a widely used binary serialisation format, Cap'n Proto has the
@@ -141,7 +148,8 @@ open-source libraries:
     \item glm: The OpenGL maths library, used for computing transforms and its matrix/vector types
     \item Cap'n Proto: An extremely fast data serialisation format, used to transport data between Python and
         C++.
-    \item dr\_flac: A single-file FLAC decoder.
+    \item dr\_flac: A fast single-file FLAC decoder.
+    \item stb\_image: An image file decoder for many file formats.
 \end{itemize}
 
 \subsection{Analysis script}
@@ -149,22 +157,23 @@ The analysis script is written in Python, and computes the spectral data used by
 bars. It computes this data "offline", meaning it does not run in real-time, unlike the C++ code. It also uses
 a relatively standard setup of Python libraries, with some additions due to the audio work involved:
 \begin{itemize}
-    \item NumPy
-    \item SciPy
-    \item spectrum.py: Used to compute the periodogram
-    \item Cap'n Proto
-    \item audiofile.py: For loading the FLAC file
+    \item NumPy: Numerical computing library.
+    \item SciPy: Scientific computing library.
+    \item spectrum.py: Used to compute the periodogram.
+    \item Cap'n Proto: Data inter-change format, see above.
+    \item audiofile.py: For loading the FLAC file.
     \item Matplotlib: For graphing the waveform, debugging
 \end{itemize}
 
 \clearpage
 \section{Signal processing}
 The overarching goal of the signal processing is to turn a time-domain audio signal into a frequency domain
-spectrogram, similar to the Monstercat visualiser shown in Figure \ref{monstercat}. This turns out to actually
+spectrogram, similar to the Monstercat visualiser shown in Figure \ref{monstercat}.
+This turns out to actually
 be quite an involved process, so this section will essentially a whirlwind tour of audio signal processing!
 
 \subsection{Background: Computer audio}
-Firstly, to clarify, a raw audio signal consists of a number of digital \textit{samples} that are sent through
+A raw audio signal consists of a number of digital \textit{samples} that are sent through
 an audio system at a particular \textit{sampling frequency}, typically 44.1 KHz.
 \footnote{The exact reasons why are out of scope for this paper, but it has to do with the Nyquist-Shannon
 theorem and history with CDs.}
@@ -241,8 +250,36 @@ This is all just a few lines of Python:
 \end{minted}
 
 \subsection{Power spectrum and periodogram}
+From the DFT, a power spectrum - otherwise known as "power spectral density" (PSD) - can be computed. The
+power spectrum "describes how a signal's power is distributed in frequency" \cite{Youngworth2005}. Consider
+a signal $U_T(t)$, whose Fourier transform is given by $|U_T(V)|^2$. The power spectrum can be computed as
+follows, using the definition in \cite{Youngworth2005}:
+$$\text{PS}(V) = \frac{|U_T(V)|^2}{N^2}$$
+Where $N$ is the total number of sample points.
 
-\subsection{Conversion to dBFS}
+Then, the power spectral density can then be simply computed as:
+$$\text{PSD}(V) = \frac{PS(V)}{\Delta v}$$
+Where $\Delta v$ is the space between data points in frequency space (so, the sampling rate).
+
+Critically, the result of this equation is in the units of amplitude squared per frequency unit - which is
+unwieldy and not particularly useful for our type of audio analysis. Instead, it would be better if we
+converted it into dBFS ("Decibels relative to full scale"). This is a unit where 0.0 dBFS is the loudest
+possible sound a system can emit, and it decreases negatively from there. For example, -10 dBFS is 10 dB
+quieter than the maximum possible sound a system can emit.
+
+The conversion from PSD to dBFS can be achieved as follows, given our signal $U_T(t)$:
+
+$$\text{dbFS}_T(t) = \sum_t \log_{10} \frac{\text{PSD}(t)}{\text{max(PSD)}}$$
+
+Implementing the above in Python, this produces the plot in Figure \ref{fig:psd}:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=385px]{img/psd.png}
+\caption{Power spectral density (PSD) in dbFS of a block of audio from the song "Saturn's Air" by
+    artist Animadrop}
+\label{fig:psd}
+\end{figure}
 
 \subsection{Sampling and binning spectral data}
 
@@ -251,7 +288,51 @@ This is all just a few lines of Python:
 
 \subsection{Transforming and rendering bars}
 
+\subsection{Computing camera animations}
+In the visualiser, camera animations really consist of a begin pose, end pose, and a duration. This is
+encoded in the \verb|cosc::CameraAnimation| class. Then, in turn, a
+\verb|cosc::CameraAnimationManager| is attached to the \verb|cosc::Camera|, which enables it to animate the
+camera every frame.
+
+\begin{minted}[fontsize=\footnotesize]{c++}
+/// A camera animation
+class CameraAnimation {
+public:
+    /// Beginning camera pose
+    CameraPose begin;
+    /// Ending camera pose
+    CameraPose end;
+    // Duration of the animation in seconds
+    float duration;
+
+    explicit CameraAnimation(const CameraPose &poseBegin, const CameraPose &poseEnd, float time) :
+        begin(poseBegin), end(poseEnd), duration(time) {};
+};
+
+/// Manages a camera with a set of animations.
+class CameraAnimationManager {
+public:
+    explicit CameraAnimationManager(Camera &camera) : camera(camera) {};
+
+    void update(float delta);
+
+    void addAnimations(std::vector<CameraAnimation> animation) {
+        ...
+    }
+
+    ...
+};
+\end{minted}
+
+The \verb|cosc::CameraPose| represents both the position and orientation of the camera using a 3D vector and
+quaternion respectively. TODO explain quaternions (lol).
+
 \section{Results}
+
+\section{Discussion}
+Future improvements, etc.
+
+\section{Self-assessment}
 
 \section{Conclusion}
 

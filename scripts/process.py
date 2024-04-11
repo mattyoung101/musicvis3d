@@ -41,8 +41,8 @@ MIN_VOL = -80
 MAX_VOL = 0
 
 # TODO make these command line args, this is stupid
-PLOT = False
-PLOT_FFT = False
+PLOT = True
+PLOT_FFT = True
 PLOT_BAR = False
 
 
@@ -65,9 +65,6 @@ def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> Tuple[float
     # TODO go back to scipy (see obsidian) so we can do DC removal??
     p = Periodogram(block, sampling=sampling_rate, window="kaiser")
     p.run()
-
-    # apply perceptual weighting (make the graph look like how it would sound, I guess)
-    # weighted = librosa.A_weighting(db) # FIXME doesn't work
 
     # we want to sample along yf logarithmically, just like it's graphed
     # This used to be logarithmic sampling using np.geomspace, but the problem is that it seems like the

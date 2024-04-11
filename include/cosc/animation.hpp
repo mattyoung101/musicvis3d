@@ -26,7 +26,7 @@ public:
         animations.emplace_back(animation);
     }
 
-    void addAnimations(std::vector<CameraAnimation> animation) {
+    void addAnimations(const std::vector<CameraAnimation> &animation) {
         for (const auto &a : animation) {
             animations.emplace_back(a);
         }
