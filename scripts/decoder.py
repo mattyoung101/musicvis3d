@@ -2,6 +2,7 @@
 import sys
 from pathlib import Path
 import capnp
+import matplotlib.pyplot as plt
 
 
 def main():
@@ -27,7 +28,10 @@ def main():
             print(f"Block {i}: {block}")
 
         print(f"Num bars: {music_vis.numBars}\nSample rate: {music_vis.sampleRate} Hz\nBlock size: "
-              f"{music_vis.blockSize} samples")
+              f"{music_vis.blockSize} samples\nMax spectral energy: {music_vis.maxSpectralEnergy}")
+
+        plt.plot(music_vis.spectralEnergyBlocks)
+        plt.show()
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ import scipy
 # - https://spatialthoughts.com/2022/01/14/animated-plots-with-matplotlib/
 # - https://www.youtube.com/watch?v=aQKX3mrDFoY
 # - https://pyspectrum.readthedocs.io/en/latest/quickstart.html
+# - https://stackoverflow.com/a/28181897/5007892
 
 # Number of samples that constitutes one spectrum block
 BLOCK_SIZE = 1024
@@ -41,7 +42,7 @@ MIN_VOL = -80
 MAX_VOL = 0
 
 # TODO make these command line args, this is stupid
-PLOT = True
+PLOT = False
 PLOT_FFT = True
 PLOT_BAR = False
 
@@ -115,7 +116,7 @@ def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> Tuple[float
         bars.append(val)
 
     # Compute spectral energy
-    spectral_energy = 0.0
+    spectral_energy = np.sum(p.psd) ** 2
 
     # plot spectrum
     if PLOT and PLOT_FFT:
@@ -126,7 +127,8 @@ def process_block(block: np.ndarray, sampling_rate: int, ax=None) -> Tuple[float
         for sample in samples:
             plt.axvline(x=sample, color="grey")
 
-    return spectral_energy, [int(x) for x in bars]
+    # Convert back to Python datatypes
+    return float(spectral_energy), [int(x) for x in bars]
 
 
 def main():
@@ -197,7 +199,7 @@ def main():
 
     music_vis.blocks = all_bars
     music_vis.spectralEnergyBlocks = energies
-    music_vis.maxSpectralEnergy = np.max(energies)
+    music_vis.maxSpectralEnergy = float(np.max(energies))
 
     # write capnp message
     data_path = Path(f"data/songs/{song_name}/spectrum.bin")

@@ -32,7 +32,7 @@ public:
         }
     }
 
-    void update(float delta);
+    void update(float delta, float spectralEnergyRatio);
 
     void forceAdvanceAnimation() {
         SPDLOG_INFO("Forcing advance to next animation");

@@ -105,11 +105,11 @@ static void addAnimations() {
             CameraPose(glm::vec3(14.7786, -1.4914, 8.8891), glm::quat(0.9655, 0.0778, 0.2476, -0.0199)),
             10.f
         ),
-        CameraAnimation(
-            CameraPose(glm::vec3(26.3049, 4.7166, 1.8017), glm::quat(0.6935, -0.1665, 0.6815, 0.1636)),
-            CameraPose(glm::vec3(16.4088, 0.9681, 10.5837), glm::quat(0.9584, -0.0264, 0.2839, 0.0078)),
-            10.f
-        ),
+        // CameraAnimation(
+        //     CameraPose(glm::vec3(26.3049, 4.7166, 1.8017), glm::quat(0.6935, -0.1665, 0.6815, 0.1636)),
+        //     CameraPose(glm::vec3(16.4088, 0.9681, 10.5837), glm::quat(0.9584, -0.0264, 0.2839, 0.0078)),
+        //     10.f
+        // ),
         CameraAnimation(
             CameraPose(glm::vec3(7.3091, -16.7948, 16.1069), glm::quat(0.9257, 0.3782, -0.0047, 0.0019)),
             CameraPose(glm::vec3(7.1402, 18.2470, 16.4410), glm::quat(0.9196, -0.3929, -0.0047, -0.0020)),
@@ -316,6 +316,8 @@ int main(int argc, char *argv[]) {
     camera.setNearClip(0.1f);
     camera.setFarClip(200.0f);
 
+    auto maxSpectralEnergy = songData.spectrum.getMaxSpectralEnergy();
+
     while (cosc::isAppRunning(appStatus)) {
         auto begin = std::chrono::steady_clock::now();
 
@@ -345,9 +347,14 @@ int main(int argc, char *argv[]) {
             introSlideTimer += delta;
             intro.draw(introSlide);
         } else {
+            // current spectrum block
+            // note that songData.blockPos gets updated by mixAudio() (FIXME possible race condition?)
+            auto block = songData.spectrum.getBlocks()[songData.blockPos];
+            auto spectralEnergy = songData.spectrum.getSpectralEnergyBlocks()[songData.blockPos];
+
             // update camera animations
             if (!isFreeCam) {
-                animationManager.update(delta);
+                animationManager.update(delta, spectralEnergy / maxSpectralEnergy);
             }
 
             // enable our shader program (before we push uniforms)
@@ -360,9 +367,6 @@ int main(int argc, char *argv[]) {
 
             // current bar we're editing
             size_t barIdx = 0;
-            // current spectrum block
-            // note that songData.blockPos gets updated by mixAudio() (FIXME possible race condition?)
-            auto block = songData.spectrum.getBlocks()[songData.blockPos];
             for (auto &bar : barModels) {
                 // first, get bar height from 0-255 directly from the Cap'n Proto
                 auto barHeight = block[barIdx];

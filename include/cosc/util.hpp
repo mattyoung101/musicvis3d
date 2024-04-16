@@ -17,7 +17,7 @@ namespace fs = std::filesystem;
 #define WIREFRAME 0
 
 /// If true, skip intro
-#define SKIP_INTRO 0
+#define SKIP_INTRO 1
 
 /// Units between bars
 constexpr float BAR_SPACING = 2.5;
@@ -37,6 +37,7 @@ constexpr float BAR_MAX_HEIGHT = 50.;
 /// Intro slide time in seconds
 constexpr float INTRO_SLIDE_TIME = 3.0;
 
+/// Number of intro slides
 constexpr size_t INTRO_NUM_SLIDES = 3;
 
 namespace cosc {
