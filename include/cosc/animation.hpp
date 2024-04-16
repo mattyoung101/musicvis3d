@@ -48,6 +48,8 @@ private:
     float elapsed;
     /// Current animation index
     int curIdx = -1; // it will be incremented to 0 on the first run this way, kinda hacky
+    /// Actual total delta
+    float total;
 };
 
 }
