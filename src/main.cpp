@@ -17,6 +17,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <spdlog/spdlog.h>
 #include "cosc/song_data.hpp"
+#include "cosc/framebuffer.hpp"
 
 #if FULLSCREEN == 0
 static constexpr int WIDTH = 1600;
@@ -50,12 +51,23 @@ float introSlideTimer = 0.f;
 
 /// SDL audio callback
 static void audio_callback(void *userData, uint8_t *stream, int len) {
-    cosc::SongData *songData = static_cast<cosc::SongData *>(userData);
+    auto *songData = static_cast<cosc::SongData *>(userData);
     songData->mixAudio(stream, len);
 }
 
+/// OpenGL message callback
+/// See: https://www.khronos.org/opengl/wiki/OpenGL_Error#Catching_errors_(the_easy_way)
+void GLAPIENTRY glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+    const GLchar *message, const void *userParam) {
+    if (type == GL_DEBUG_TYPE_ERROR) {
+        SPDLOG_ERROR("GL ERROR: {}", message);
+    } else {
+        SPDLOG_INFO("GL INFO: {}", message);
+    }
+}
+
 /// Load and construct bar models. The bar model is based on a unit cube exported from Blender.
-static void constructBars(const cosc::SongData &songData, const std::string &dataDir) {
+void constructBars(const cosc::SongData &songData, const std::string &dataDir) {
     for (size_t i = 0; i < songData.spectrum.getNumBars(); i++) {
         SPDLOG_DEBUG("Adding bar {}/{}", i, songData.spectrum.getNumBars() - 1);
         auto model = cosc::Model(dataDir + "/cube.dae");
@@ -74,7 +86,7 @@ static void constructBars(const cosc::SongData &songData, const std::string &dat
 
 /// Adds animations to the visualiser
 /// These are computed by using freecam mode and hitting 'g', which prints the CameraPose to console.
-static void addAnimations() {
+void addAnimations() {
     using namespace cosc;
 
     // clang-format off
@@ -130,7 +142,7 @@ static void addAnimations() {
 }
 
 /// Poll SDL events
-static void pollInputs() {
+void pollInputs() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
@@ -282,22 +294,24 @@ int main(int argc, char *argv[]) {
     SPDLOG_INFO("GL version: {}", (const char *) glGetString(GL_VERSION));
 
     // setup baseline GL stuff
-    int realWidth;
-    int realHeight;
-    SDL_GetWindowSizeInPixels(window, &realWidth, &realHeight);
-    glViewport(0, 0, realWidth, realHeight);
+    int scrWidth;
+    int scrHeight;
+    SDL_GetWindowSizeInPixels(window, &scrWidth, &scrHeight);
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(glMessageCallback, 0);
+    glViewport(0, 0, scrWidth, scrHeight);
     glEnable(GL_DEPTH_TEST);
 #if WIREFRAME == 1
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 #endif
 
     // setup our custom GL objects
-    // camera = cosc::CameraPersp(realWidth, realHeight, 45.f);
     constructBars(songData, dataDir);
     addAnimations();
     cosc::Cubemap skybox(dataDir, "skybox");
     cosc::Shader barShader(dataDir / "bar.vert.glsl", dataDir / "bar.frag.glsl");
     cosc::IntroManager intro(dataDir);
+    cosc::FrameBuffer frameBuffer(dataDir, "post.frag.glsl", scrWidth, scrHeight);
 
     // basically capture mouse, for FPS controls
     // note this is different from SDL_CaptureMouse though, but we are emulating the behaviour of what, for
@@ -324,9 +338,20 @@ int main(int argc, char *argv[]) {
         // process SDL input
         pollInputs();
 
-        // clear screen
+        // current spectrum block
+        // note that songData.blockPos gets updated by mixAudio() (FIXME possible race condition?)
+        auto block = songData.spectrum.getBlocks()[songData.blockPos];
+        auto spectralEnergy = songData.spectrum.getSpectralEnergyBlocks()[songData.blockPos];
+
+        // bind FBO - only if we're out of the intro
+        if (cosc::isNotInIntro(appStatus)) {
+            frameBuffer.bind();
+        }
+
+        // clear screen - always in intro or out of intro
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
 
         if (cosc::isInIntro(appStatus)) {
             // update slides
@@ -339,19 +364,14 @@ int main(int argc, char *argv[]) {
                 if (introSlide >= INTRO_NUM_SLIDES) {
                     SPDLOG_INFO("Exiting intro!");
                     appStatus = cosc::AppStatus::RUNNING;
+                    // FIXME: we should do the equivalent of "goto nextframe" here and not draw
                 }
-                // FIXME: we should do the equivalent of "goto nextframe" here and not draw
             }
 
-            // only draw if we're still in the intro (to fix a bug)
+            // now draw the slides
             introSlideTimer += delta;
             intro.draw(introSlide);
         } else {
-            // current spectrum block
-            // note that songData.blockPos gets updated by mixAudio() (FIXME possible race condition?)
-            auto block = songData.spectrum.getBlocks()[songData.blockPos];
-            auto spectralEnergy = songData.spectrum.getSpectralEnergyBlocks()[songData.blockPos];
-
             // update camera animations
             if (!isFreeCam) {
                 animationManager.update(delta, spectralEnergy / maxSpectralEnergy);
@@ -383,6 +403,9 @@ int main(int argc, char *argv[]) {
 
             // draw skybox!
             skybox.draw(camera);
+
+            // we would have bound the FBO above, so now draw using it
+            frameBuffer.draw();
         }
 
         SDL_GL_SwapWindow(window);

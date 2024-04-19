@@ -1,8 +1,8 @@
 # COSC3000 Major Project: Computer Graphics
 _by Matt Young_
 
-This is my major project in computer graphics for COSC3000, done during UQ Sem 1 2024. The code itself is based on a
-fork of the graphics minor project, completed earlier in the semester.
+This is my major project in computer graphics for COSC3000, done during UQ Sem 1 2024. The code itself is
+based on a fork of the graphics minor project, completed earlier in the semester.
 
 ## Building and running
 You will need the following tools/libraries: 
@@ -67,12 +67,16 @@ This project makes use of the following open-source libraries:
 - stb_image: Public domain
 - `camera.cpp`/`camera.hpp` derived from Cinder Project: BSD 2-Clause
     - Upstream: https://github.com/cinder/Cinder/blob/master/src/cinder/Camera.cpp
+- `Simplex.h`: BSD 3-Clause
+    - Upstream: https://github.com/simongeilfus/SimplexNoise
 
 Some code based on code from LearnOpenGL https://learnopengl.com/ - however, given the generic nature of the
-code (there is really only one way to make a GL shader), I do not believe that their CC-BY-NC licence applies
-to this repo.
+code (i.e. there is really only one way to instantiate a GL shader), I do not believe that their CC-BY-NC
+licence applies to this repo. The LOGL content was used _as reference_ only.
 
 ## Assets used
 The space skybox was generated from: https://tools.wwwtyro.net/space-3d/index.html
+
+The rest of the assets are made by me.
 
 ## Licence

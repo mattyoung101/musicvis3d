@@ -3,11 +3,9 @@
 #include "glad/gl.h"
 #include "cosc/lib/stb_image.h"
 
-constexpr size_t NUM_SLIDES = 3;
-
 // clang-format off
 // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-float quadVertices[] = {
+static float quadVertices[] = {
     // positions   // texCoords
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
@@ -20,7 +18,8 @@ float quadVertices[] = {
 // clang-format on
 
 
-// TODO Cite LearnOpenGL
+// Quad rendering based on: https://learnopengl.com/Advanced-OpenGL/Framebuffers
+// Texture loading based on: https://learnopengl.com/Getting-started/Textures
 
 cosc::IntroManager::IntroManager(const fs::path &dataDir)
     : shader(cosc::Shader(dataDir / "quad.vert.glsl", dataDir / "quad.frag.glsl")) {
@@ -43,7 +42,7 @@ cosc::IntroManager::IntroManager(const fs::path &dataDir)
     SPDLOG_DEBUG("Loading intro textures");
     stbi_set_flip_vertically_on_load(true);
 
-    for (size_t i = 0; i < NUM_SLIDES; i++) {
+    for (size_t i = 0; i < INTRO_NUM_SLIDES; i++) {
         auto path = dataDir / ("slide" + std::to_string(i) + ".png");
         // auto path = dataDir / "intro_debug.png";
         SPDLOG_DEBUG("Loading slide: {}", path.string());
@@ -79,6 +78,8 @@ void cosc::IntroManager::draw(size_t slideNumber) {
 
     // SPDLOG_DEBUG("Drawing slide number {} with texture id {}", slideNumber, textureIds[slideNumber]);
 
+    // Don't do a depth test when rendering the fullscreen quad
+    glDisable(GL_DEPTH_TEST);
     shader.use();
 
     // bind the texture that corresponds to the slide number
@@ -89,4 +90,5 @@ void cosc::IntroManager::draw(size_t slideNumber) {
     // draw the quad
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glEnable(GL_DEPTH_TEST);
 }

@@ -24,6 +24,7 @@ add_executable(musicvis
     src/cubemap.cpp
     src/camera.cpp
     src/intro.cpp
+    src/framebuffer.cpp
     ${musicVisProtoSources}
 )
 target_include_directories(musicvis PRIVATE include ${CMAKE_CURRENT_BINARY_DIR})
