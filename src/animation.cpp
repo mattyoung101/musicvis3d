@@ -11,7 +11,7 @@
 constexpr float GAIN = 1.0f;
 constexpr uint8_t OCTAVES = 4;
 constexpr float LANCUNARITY = 1.7f;
-constexpr float SCALE = 0.1f;
+constexpr float SCALE = 0.07f;
 
 // FOV parameters
 constexpr float MIN_FOV = 55.f;

@@ -46,6 +46,9 @@ cosc::FrameBuffer::FrameBuffer(const fs::path &dataDir, const std::string &postS
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // clamp texture to avoid artefacts in post-processing, mainly chromatic aberration
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColour, 0);
 
     // attach depth and stencil textures
@@ -73,7 +76,7 @@ void cosc::FrameBuffer::bind(void) {
     bound = true;
 }
 
-void cosc::FrameBuffer::draw(void) {
+void cosc::FrameBuffer::draw(float spectralEnergyRatio) {
     if (!bound) {
         throw std::runtime_error("Framebuffer is not bound but tried drawing");
     }
@@ -87,6 +90,7 @@ void cosc::FrameBuffer::draw(void) {
 
     // use shader to draw
     quadShader.use();
+    quadShader.setFloat("spectralEnergyRatio", spectralEnergyRatio);
     glBindVertexArray(vao);
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_2D, textureColour);

@@ -14,7 +14,7 @@ public:
     void bind(void);
 
     /// Draws the framebuffer to the screen
-    void draw(void);
+    void draw(float spectralEnergyRatio);
 
 private:
     unsigned int vbo;

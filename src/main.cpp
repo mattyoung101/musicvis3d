@@ -405,7 +405,7 @@ int main(int argc, char *argv[]) {
             skybox.draw(camera);
 
             // we would have bound the FBO above, so now draw using it
-            frameBuffer.draw();
+            frameBuffer.draw(spectralEnergy / maxSpectralEnergy);
         }
 
         SDL_GL_SwapWindow(window);
