@@ -72,17 +72,18 @@
 \clearpage
 
 \section{Introduction}
-Since the first music video in (YEAR) (CITE), there has been broad interest in constructing "music
-visualisers": the process of building an often real-time visual representation of the audio.
+% Since the first music video in (YEAR) (CITE), there has been broad interest in constructing "music
+% visualisers": the process of building an often real-time visual representation of the audio.
 
-- creative and technical
-- music visualisers used by live musicians
-- many different ways to interpret audio signals
-- demoscene inspiration
+A \textit{music visualiser} is a computer program that takes as input an audio signal, typically music, and
+produces as output a graphical visualisation. Technically, this can be an entirely offline process, but most
+often music visualisers run in real-time. Music visualisers have an important role in the live entertainment
+scene \cite{mccarthy2022live}, particularly for Electronic Dance Music (EDM). With an almost infinite number
+of ways to interpret an audio signal, music visualisation is an eclectic mix of art and engineering.
 
 \subsection{Visual inspiration}
 The particular music visualiser I aim to construct is an improved version of the "spectrum of bars" once used
-by Canadian record label Monstercat, shown in Figure \ref{monstercat}.
+by Canadian record label Monstercat, shown in Figure \ref{fig:monstercat}.
 The label has since transitioned away
 from this computational music visualiser, and instead use custom music videos.
 
@@ -90,10 +91,14 @@ from this computational music visualiser, and instead use custom music videos.
 \centering
 \includegraphics[width=384px]{img/monstercat.png}
 \caption{Visualisation of the song "Pure Sunlight" \cite{youtubeElectronicFijiWiji}}
-\label{monstercat}
+\label{fig:monstercat}
 \end{figure}
 
-- demoscene inspiration
+The visualisation in Figure \ref{fig:monstercat}
+is a common type of visualisation that visualises the audio spectrum - it shows the magnitudes of the varying
+frequencies that make up the song. This spectral data can be interpreted in a number of ways, for example, the
+MilkDrop \cite{milkdrop} software includes visualisations that encode this in a number of complex ways. However,
+for our use case, bars are visually appealing and an intuitive approach to visualising the music.
 
 \section{Architecture overview}
 \subsection{Overall description of sub-applications}
@@ -101,9 +106,14 @@ The visualiser itself is developed and tested in a Linux environment, and is spl
 the visualiser itself (written in C++20), and the analysis script (written in Python). Signal processing is a
 very complex subject, and real-time ("online") signal processing in C++ is even more so. Python generally has
 simpler tools to address signal processing problems, such as NumPy and SciPy, so the signal processing part
-was moved offline into a Python script.
+was moved offline into a Python script. This is shown in Figure \ref{fig:block}:
 
-(DIAGRAM)
+\begin{figure}[H]
+\centering
+\includegraphics[width=300px]{img/diagram.drawio.png}
+\caption{Block diagram of music visualisation application}
+\label{fig:block}
+\end{figure}
 
 The analysis script is first run that reads a FLAC \cite{xiphFLACWhat} audio file, and produces a Cap'n Proto
 \cite{capnp} encoded binary file containing the necessary data to render a spectrum for the chosen song. Each
@@ -111,9 +121,7 @@ song consists of a directory containing one audio file, \verb|audio.flac|, and o
 \verb|spectrum.bin|. These are stored in the \verb|data| directory. For example: \\
 \verb|data/songs/LauraBrehm_PureSunlight/{audio.flac},{spectrum.bin}|
 
-(DIRECTORY TREE)
-
-Free Lossless Audio Codec (FLAC) is a lossless audio compression and container format. It was mainly selected
+Free Lossless Audio Codec (FLAC) \cite{xiphFLACWhat} is a lossless audio compression and container format. It was mainly selected
 due to its ability to be easy loaded in C++ through open-source libraries like \verb|dr_flac|, the fact that
 it's entirely royalty and patent free, as well as its lossless nature. Although codecs such as MPEG-3 and
 Vorbis are transparent at around 320 Kbps (meaning there are no perceptible differences between the compressed
@@ -121,7 +129,7 @@ codec and uncompressed audio), there may still be subtle artefacts introduced in
 picked up by the visualiser. In any case, storing the audio in an uncompressed format introduces very little
 overhead and can always be transcoded later down the track if marginally smaller file size is desired.
 
-Cap'n Proto is a binary serialisation format that is regarded as a faster successor to Protocol Buffers.
+Cap'n Proto \cite{capnp} is a binary serialisation format that is regarded as a faster successor to Protocol Buffers.
 Compared to Protocol Buffers, which are also a widely used binary serialisation format, Cap'n Proto has the
 added benefit of requiring zero decode time and supporting very fast in-memory access. This is perfect for the
 spectral data, which needs to be written once by the Python code, and re-read continuously by the C++
@@ -165,10 +173,9 @@ a relatively standard setup of Python libraries, with some additions due to the 
     \item Matplotlib: For graphing the waveform, debugging
 \end{itemize}
 
-\clearpage
 \section{Signal processing}
 The overarching goal of the signal processing is to turn a time-domain audio signal into a frequency domain
-spectrogram, similar to the Monstercat visualiser shown in Figure \ref{monstercat}.
+spectrogram, similar to the Monstercat visualiser shown in Figure \ref{fig:monstercat}.
 This turns out to actually
 be quite an involved process, so this section will essentially a whirlwind tour of audio signal processing!
 
@@ -277,11 +284,31 @@ Implementing the above in Python, this produces the plot in Figure \ref{fig:psd}
 \centering
 \includegraphics[width=385px]{img/psd.png}
 \caption{Power spectral density (PSD) in dbFS of a block of audio from the song "Saturn's Air" by
-    artist Animadrop}
+    artist Animadrop.}
 \label{fig:psd}
 \end{figure}
 
-\subsection{Sampling and binning spectral data}
+Also to note here is that we compute a metric known as \textit{spectral energy}, which is a measure of the
+"excitement" of the audio. It's computed as the magnitude squared of the FFT:
+$$S_E = \sum_{i=0}^{k} (\text{PSD}(i))^2$$
+
+\subsection{Binning spectral data}
+Now that we have spectral data for each block of audio, we need to process it into "bins", or blocks, and use
+that to construct the bars. Given we know the number of bars we want (by default, 32), we can simply sample
+this using NumPy:
+
+\begin{minted}{python}
+    samples = np.linspace(FREQ_MIN, FREQ_MAX, NUM_BARS)
+\end{minted}
+
+Where \verb|FREQ_MIN| and \verb|FREQ_MAX| refer to the human hearing range, 20 Hz to 20 KHz, respectively.
+
+Then, we simply walk through the linear space considering our current and previous value, and compute the mean
+amplitude inside this block. There is some additional code that maps this value, in dbFS, to a \verb|uint8_t|
+bar height from 0 to 255, for Cap'n Proto serialisation.
+
+Once this is computed, the data is serialised and can be loaded in C++ - and the signal processing is
+complete.
 
 \section{Computer graphics}
 \subsection{Audio and spectrum decoding}
