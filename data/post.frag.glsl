@@ -25,11 +25,12 @@ void main() {
     //
     // FragColor = vec4(rValue.r, gValue.g, bValue.b, 1.0);
 
-    vec4 colour = texture2D(screenTexture, TexCoords);
+    vec4 colour;
     float amount = 0.06 * spectralEnergyRatio;
     colour.r = texture2D(screenTexture, vec2(TexCoords.x + amount, TexCoords.y)).r;
     colour.g = texture2D(screenTexture, TexCoords).g;
     colour.b = texture2D(screenTexture, vec2(TexCoords.x - amount, TexCoords.y)).b;
+    colour.a = 1.0;
 
     FragColor = colour;
 }

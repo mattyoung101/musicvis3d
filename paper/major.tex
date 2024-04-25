@@ -60,14 +60,15 @@
     method to convert time domain audio signals to a frequency domain spectrum. With this spectral data comes
     an almost unlimited number of ways to interpret it and construct a visualisation. In this paper, I
     investigate applying the DFT to construct a semi real-time audio visualisation using OpenGL. The
-    visualisation consists of offline spectral data that is rendered in real-time in the form of "bars" with
-    lighting, and a set of pre-programmed camera moves computed via linear (translation) and
-    spherical-linear (orientation) interpolation.
+    visualisation consists of offline spectral data that is rendered in real-time in the form of 3D bars, and
+    a multitude of graphics techniques including quaternion camera animation, camera shake using fractal
+    Brownian motion Simplex noise, and a post-processing stage that implements chromatic aberration. The
+    application is written in a mix of C++ and Python.
 \end{abstract}
 
 \tableofcontents
 
-\clearpage
+% \clearpage
 \listoffigures
 \clearpage
 
@@ -81,7 +82,6 @@ often music visualisers run in real-time. Music visualisers have an important ro
 scene \cite{mccarthy2022live}, particularly for Electronic Dance Music (EDM). With an almost infinite number
 of ways to interpret an audio signal, music visualisation is an eclectic mix of art and engineering.
 
-\subsection{Visual inspiration}
 The particular music visualiser I aim to construct is an improved version of the "spectrum of bars" once used
 by Canadian record label Monstercat, shown in Figure \ref{fig:monstercat}.
 The label has since transitioned away
@@ -110,7 +110,7 @@ was moved offline into a Python script. This is shown in Figure \ref{fig:block}:
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=300px]{img/diagram.drawio.png}
+\includegraphics[width=300px]{img/diagram.drawio.pdf}
 \caption{Block diagram of music visualisation application}
 \label{fig:block}
 \end{figure}
@@ -135,8 +135,6 @@ added benefit of requiring zero decode time and supporting very fast in-memory a
 spectral data, which needs to be written once by the Python code, and re-read continuously by the C++
 rendering code. Some of this reading takes place in the audio callback, which could be regarded as a soft
 real-time function, and hence requiring very minimal overhead.
-\footnote{Additionally, Cap'n P integrates nicely with my editor, Neovim, which was one of the bigger reasons
-for its selection.}
 
 The FLAC file for a typical song weighs in at around 10 MB, and the spectral data is only around 200 KiB
 thanks to Cap'n Proto's packed stream writing feature. Due to its speed, Cap'n P has to make some
@@ -311,17 +309,99 @@ Once this is computed, the data is serialised and can be loaded in C++ - and the
 complete.
 
 \section{Computer graphics}
-\subsection{Audio and spectrum decoding}
+\subsection{Render pipeline and states overview}
+The visualiser uses a fairly standard, simple, forward rendering pipeline based on OpenGL 3.0. The exact
+rendering pipeline depends on which one of the two states the application may be in.
+
+The application is divided in two two states: "intro" state, and "running" state. In the intro state, a
+fullscreen textured quad displays three introduction slides which display the project name, my name, and the
+song name \footnote{At this time, the song name is hardcoded and has to be manually changed when the song is
+changed}.
+
+Once this is completed, the application transitions into "running" mode, which performs the actual
+visualisation. This mode first binds a framebuffer. Then, it draws the bars using a GLSL shader, then the
+skybox as a cubemap, and finally draws the framebuffer using a special fragment shader to provide some
+post-processing effects.
+
+TODO DIAGRAM
+
+\subsection{Initialisation}
+SDL and glad are used to initialise the system platform. SDL is used to create the window, manage the audio
+context, and load the GL driver. glad is the OpenGL loader which allows the actual interfacing with the GL
+driver. One particularly important note to make regarding platform initialisation is the audio stream. For a
+music visualisation application, it's very important that the on-screen graphics are precisely synced to the
+audio being played. This means that a low-latency audio stream is required, one that is equal or smaller to
+the spectral data block size. I achieve this by using SDL's newer audio APIs, which allow resampling based on
+the platform audio driver's selection of what it believes is the best format. In the code, we request a
+particular low sampling rate using \verb|SDL_AudioSpec|, but allow SDL to change the actual underlying
+datatype if it desires.
+
+At startup, the application is passed the path to the data directory and the name of the song to display. Once
+platform initialisation is complete, the FLAC audio is decoded using the dr\_flac library, and the Cap'n Proto
+spectrum data is decoded using the C++ Cap'n Proto library. This is stored in the \verb|cosc::SongData| class,
+which also handles mixing the audio into the SDL audio stream using \verb|cosc::SongData::mixAudio|, which
+also handles resampling using SDL.
 
 \subsection{Transforming and rendering bars}
+Each frame, we query the \verb|cosc::SongData| to figure out which spectrum block we are in, and use that to
+query the heights of all the bars from the decoded Cap'n Proto document. The heights are a \verb|uint8_t|, so
+range from 0 to 255 inclusive. These are remapped to a float based on a configurable minimum and maximum
+height.
 
-\subsection{Computing camera animations}
-In the visualiser, camera animations really consist of a begin pose, end pose, and a duration. This is
-encoded in the \verb|cosc::CameraAnimation| class. Then, in turn, a
-\verb|cosc::CameraAnimationManager| is attached to the \verb|cosc::Camera|, which enables it to animate the
-camera every frame.
+The spectrum itself simply consists of $N$ unit cubes. The cubes are transformed by means of a transformation
+matrix, exactly as was done in the previous Graphics Minor Project. \footnote{The only difference is that
+transformations are computed using glm, rather than manually.} The height of the bars is simply determined by
+their scale on the Y axis.
+
+This is summarised in the following code snippet:
 
 \begin{minted}[fontsize=\footnotesize]{c++}
+size_t barIdx = 0;
+for (auto &bar : barModels) {
+    // first, get bar height from 0-255 directly from the Cap'n Proto
+    auto barHeight = block[barIdx];
+    // map that 0 to 255 to BAR_MIN_HEIGHT to BAR_MAX_HEIGHT
+    auto scale = cosc::util::mapRange(0., 255., BAR_MIN_HEIGHT, BAR_MAX_HEIGHT, barHeight);
+    // apply scale, also applying our baseline BAR_SCALING factor!
+    bar.scale.y = scale * BAR_SCALING;
+    barIdx++;
+
+    // now update transforms, and off to the GPU we go!
+    bar.applyTransform();
+    bar.draw(barShader);
+}
+\end{minted}
+
+The bar shader is almost identical to the shader used in the Graphics Minor Project.
+
+TODO copy n paste description.
+
+\subsection{Computing camera animations}
+One of the goals I had in mind for the visualiser was automated and smooth camera animations, that would also
+not be too hard to describe in code. In order to do this though, the camera class from the Graphics Minor
+Project, which was based on code from LearnOpenGL, would need to be rewritten. There was also the need for a
+bug-free "freecam" mode, which can be moved around using the normal WASD and mouse controls. This is necessary
+for me to find the begin and end points for each animation and for debugging.
+
+The new camera is based on a slightly modified version of the perspective camera from the Cinder project
+\cite{cinderCamera}. The main difference compared to the previous LearnOpenGL camera, is that the new camera
+represents its pose as just a 3D vector and quaternion, rather than a set of vectors. This means that the pose
+of the camera can be described much more easily, and can also be interpolated to create animations. Other than
+that, it still outputs the same perspective and view matrices.
+
+To implement camera moves, I chose to represent any given move as a begin pose, end pose, and a duration. This
+is encoded in the \verb|cosc::CameraAnimation| class. Then, in turn, a \\ \verb|cosc::CameraAnimationManager| is
+attached to the \verb|cosc::Camera|, which enables it to animate the camera every frame.
+
+\begin{minted}[fontsize=\footnotesize]{c++}
+/// The pose of a camera, with its position and orientation.
+class CameraPose {
+public:
+    glm::vec3 pos;
+    glm::quat orientation;
+    ...
+};
+
 /// A camera animation
 class CameraAnimation {
 public:
@@ -331,9 +411,7 @@ public:
     CameraPose end;
     // Duration of the animation in seconds
     float duration;
-
-    explicit CameraAnimation(const CameraPose &poseBegin, const CameraPose &poseEnd, float time) :
-        begin(poseBegin), end(poseEnd), duration(time) {};
+    ...
 };
 
 /// Manages a camera with a set of animations.
@@ -341,27 +419,118 @@ class CameraAnimationManager {
 public:
     explicit CameraAnimationManager(Camera &camera) : camera(camera) {};
 
-    void update(float delta);
+    void update(float delta, float spectralEnergyRatio);
 
     void addAnimations(std::vector<CameraAnimation> animation) {
         ...
     }
-
     ...
 };
 \end{minted}
 
-The \verb|cosc::CameraPose| represents both the position and orientation of the camera using a 3D vector and
-quaternion respectively. TODO explain quaternions (lol).
+% The \verb|cosc::CameraPose| represents both the position and orientation of the camera using a 3D vector and
+% quaternion respectively. TODO explain quaternions (lol).
 
-\section{Results}
+Every frame, the \verb|cosc::CameraAnimationManager| takes the delta time of the last frame and a spectral
+energy ratio, to compute the camera animations. The spectral energy ratio is simply the current spectral
+energy divided by the max spectral energy across the whole song. This lets us animate effects to the
+\textit{intensity} of the song, which we'll soon cover.
+
+The CameraAnimationManager stores which of the animations it's currently in, and handles the logic to
+transition to the next animation. When the end of the animation list is reached, it's simply wrapped around
+using modulo. The animation progress is tracked by keeping a sum of the delta values provided to the
+\verb|update()| function, forming an \verb|elapsed| value.
+
+Animating the 3D position of the camera between the begin and end pose turns out to be very easy, using simple
+linear interpolation, as follows:
+
+\begin{minted}[fontsize=\footnotesize]{c++}
+auto pos = glm::mix(anim.begin.pos, anim.end.pos, progress); // performs linear interpolation
+camera.setEyePoint(pos);
+\end{minted}
+
+The \verb|progress| value ranges from 0.0 to 1.0 and is computed by \verb|elapsed / anim.duration|.
+
+Animating the orientation of the camera is much, \textit{much} more difficult. There are a number of ways of
+expressing 3D orientations, the two main paradigms being Euler angles and quaternions. Euler angles represent
+rotations as a 3D vector of angles around axes: pitch, roll and yaw (Figure \ref{fig:euler}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=270px]{img/euler.png}
+\caption{Demonstration of Euler angle rotation system}
+\label{fig:euler}
+\end{figure}
+
+Unfortunately, Euler angles suffer from well-described problems such as ambiguity and gimbal lock
+\cite{Hemingway2018}, which make their use unsuitable for freeform 3D rotations and animations as is required
+in this project.
+
+Instead, the system of quaternions are used. A quaternion is a 4D complex number system that can be used to
+encode 3D rotations, and has a direct correlation to rotation matrices (TODO citation).
+
+TODO
+
+\subsection{Skybox cubemap}
+The visualiser also draws a skybox using OpenGL's cubemap system. A cubemap is a 3D texture that is mapped to
+a cube volume that surrounds the environment. Assuming the texture has no visible seams on the edges of the
+cube volume, the cubemap gives the impression of a detailed space environment. This is a very common technique
+used in almost all video games. The space cubemap texture itself was generated using the tool in
+\cite{tyroSpace}, which uses procedural techniques.
+
+TODO talk about the depth optimisation.
+
+\subsection{Post-processing effects}
+The visualiser implements a simple post-processing pass that is run after the main scene is drawn. Currently,
+the only effect rendered is chromatic aberration. This is an "artistic touch", if you will, that I added to
+emphasise the \textit{intensity} of the song at certain points. The intensity is automatically calculated by
+the same metric used to drive the screen shake: spectral energy ratio (that is, current spectral energy $\div$
+max spectral energy).
+
+Post-processing is achieved using OpenGL's framebuffer and renderbuffer system. The framebuffer is attached to
+the colour buffer, which is sampled in the fragment shader. The colour and stencil buffers are bound to the
+renderbuffer, which does not need to be sampled.
+
+The fragment shader, which implements the post-processing effects, is passed the final rendered image along
+with the spectral energy ratio. To compute chromatic aberration, the fragment sampling position is adjusted on
+the horizontal axis by an amount relative to the spectral energy ratio, performed separately for the R, G and
+B channels. This is implemented as follows (based on the shader in \cite{godotChromatic}):
+
+\begin{minted}[fontsize=\footnotesize]{c++}
+vec4 colour;
+float amount = 0.06 * spectralEnergyRatio;
+colour.r = texture2D(screenTexture, vec2(TexCoords.x + amount, TexCoords.y)).r;
+colour.g = texture2D(screenTexture, TexCoords).g;
+colour.b = texture2D(screenTexture, vec2(TexCoords.x - amount, TexCoords.y)).b;
+colour.a = 1.0;
+\end{minted}
+
+The result is shown in Figure \ref{fig:chromatic}:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=330px]{img/chromatic_small.png}
+\caption{Screenshot of visualisation application showing chromatic aberration effect}
+\label{fig:chromatic}
+\end{figure}
+
+% We probably don't need this section if we include results inline
+% \section{Results}
 
 \section{Discussion}
 Future improvements, etc.
 
 \section{Self-assessment}
+I'm really proud of the work I achieved for this project. The visualiser turned out better than I was hoping
+for, and I was able to achieve everything I set out to.
 
 \section{Conclusion}
+In this paper, I present a 3D music visualisation application using OpenGL and the Discrete Fourier
+Transform. The offline signal processing, using the Fast Fourier Transform as the mechanism for computing the
+DFT, is implemented in Python. The visualisation application, which loads the computed spectral data, is
+implemented using C++. It has graphics features such as camera animations, camera shake, a cubemap skybox, and
+a post-processing path that implements chromatic aberration, and an intro section. The application can be
+configured to display any song with audio available.
 
 \section{References}
 \printbibliography[heading=none]
