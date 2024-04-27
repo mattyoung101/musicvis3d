@@ -323,7 +323,15 @@ visualisation. This mode first binds a framebuffer. Then, it draws the bars usin
 skybox as a cubemap, and finally draws the framebuffer using a special fragment shader to provide some
 post-processing effects.
 
-TODO DIAGRAM
+The diagram in Figure \ref{fig:renderpipe}
+shows the rendering pipeline (next page):
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=330px]{img/renderpipe.drawio.pdf}
+\caption{Diagram of graphics render pipeline}
+\label{fig:renderpipe}
+\end{figure}
 
 \subsection{Initialisation}
 SDL and glad are used to initialise the system platform. SDL is used to create the window, manage the audio
@@ -421,7 +429,7 @@ public:
 
     void update(float delta, float spectralEnergyRatio);
 
-    void addAnimations(std::vector<CameraAnimation> animation) {
+    void addAnimations(const std::vector<CameraAnimation> &animation) {
         ...
     }
     ...
