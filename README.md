@@ -1,8 +1,17 @@
 # COSC3000 Major Project: Computer Graphics
 _by Matt Young_
 
+This is a semi real-time 3D audio visualisation using OpenGL. The visualisation consists of offline spectral
+data that is rendered in real-time in the form of 3D bars. A multitude of graphics techniques are used,
+including: quaternion camera animation, camera shake using Simplex noise under fractal Brownian motion, a
+skybox, and a post-processing stage that implements chromatic aberration. The application is written in a mix
+of C++ (for rendering) and Python (for DSP). The spectrum of bars is computed using the Fast Fourier
+Transform.
+
 This is my major project in computer graphics for COSC3000, done during UQ Sem 1 2024. The code itself is
 based on a fork of the graphics minor project, completed earlier in the semester.
+
+For more information, see [paper/major.pdf](paper/major.pdf).
 
 ## Building and running
 You will need the following tools/libraries: 
@@ -29,7 +38,7 @@ cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release # or Debug
 
 Build (in `build` directory): `ninja`
 
-Run: `./musicvis`
+Run: `./musicvis ../data BandName_SongName`
 
 In the fish shell, use `set -x ASAN_OPTIONS detect_leaks=0` to silence LeakSanitizer which has false positives
 under SDL2.
@@ -54,6 +63,10 @@ This will then write the `spectrum.bin` file in the Cap'n Proto format.
 
 To double check this worked, run `./scripts/decoder.py Band_Name_Song_Name`. This will load the capnp message
 in `spectrum.bin` and display it.
+
+## Compiling the paper
+The paper is written in [Typst](https://github.com/typst/typst). In the `paper` directory, you can run `typst
+compile major.typ` to produce `major.pdf`.
 
 ## Libraries used
 This project makes use of the following open-source libraries:
@@ -80,3 +93,4 @@ The space skybox was generated from: https://tools.wwwtyro.net/space-3d/index.ht
 The rest of the assets are made by me.
 
 ## Licence
+TBA

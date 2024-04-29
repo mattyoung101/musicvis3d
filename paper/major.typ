@@ -2,9 +2,12 @@
 #show cite: set text(fill: blue)
 #show link: set text(fill: blue)
 #show ref: set text(fill: blue)
+#show footnote: set text(fill: blue)
 
 #set list(indent: 12pt)
 #set heading(numbering: "1.")
+#set math.equation(numbering: "(1)")
+#set page(numbering: "1")
 
 #align(center, text(18pt)[
     *A 3D music visualisation in OpenGL using the Discrete Fourier Transform*
@@ -29,10 +32,10 @@
     method to convert time domain audio signals to a frequency domain spectrum. With this spectral data comes
     an almost unlimited number of ways to interpret it and construct a visualisation. In this paper, I
     investigate applying the DFT to construct a semi real-time audio visualisation using OpenGL. The
-    visualisation consists of offline spectral data that is rendered in real-time in the form of 3D bars, and
-    a multitude of graphics techniques including quaternion camera animation, camera shake using fractal
-    Brownian motion Simplex noise, and a post-processing stage that implements chromatic aberration. The
-    application is written in a mix of C++ and Python.
+    visualisation consists of offline spectral data that is rendered in real-time in the form of 3D bars. A
+    multitude of graphics techniques are used, including: quaternion camera animation, camera shake using
+    Simplex noise under fractal Brownian motion, a skybox, and a post-processing stage that implements
+    chromatic aberration. The application is written in a mix of C++ and Python.
 ]
 
 // Create a scope for this style: https://typst.app/docs/reference/styling/
@@ -164,15 +167,15 @@ motherboards or as a separate peripheral. The samples cause the speaker _driver_
 driven by magnets) to vibrate, which creates the sensation of sound. A typical digital audio signal is shown
 in @fig:audiosignal.
 
-In order to build the visualiser, we will need to convert this time-domain collection of samples into a
-frequency-domain spectrogram.
-
 #figure(
     image("img/audiosignal.png", width: 80%),
     caption: [ An audio signal loaded in Audacity. Top is zoomed out, bottom is zoomed in showing samples. ]
 ) <fig:audiosignal>
 
 == Fourier transforms, DFT and FFT
+In order to build the visualiser, we will need to convert this time-domain collection of samples into a
+frequency-domain spectrogram. We can achieve this through the Fourier transform technique.
+
 The history of the Fourier transform dates back to 1822 when mathematician Joseph Fourier understood that any
 function could be represented as a sum of sines @wolframFourierSeries. From that theory, the Fourier
 transform was developed.
@@ -183,7 +186,7 @@ The core equation for the Fourier transform is given by @wolframFourierTransform
 
 //$$\widehat{f}(\xi) = \int_{-\infty}^{\infty} f(x)\ e^{-i 2\pi \xi x}\,dx.$$
 #align(center)[
-    $display(hat(f )\(xi \) =  integral _(- oo )^(oo ) f \(x \)thick  e ^(- i  2 pi  xi  x )thin d x .)$
+    $ display(hat(f )\(xi \) =  integral _(- oo )^(oo ) f \(x \)thick  e ^(- i  2 pi  xi  x )thin d x .) $
 ]
 
 In simplistic terms, the Fourier transform converts a time-domain signal, where the $x$ axis is time and the
@@ -200,7 +203,7 @@ is similar, but slightly different to, the equation for the regular continuous F
 
 //$$X_k = \sum_{n=0}^{N-1} x_n \cdot e^{-i2\pi \tfrac{k}{N}n}$$
 #align(center)[
-    $display(X _(k ) =  sum _(n = 0 )^(N - 1 ) x _(n ) dot.c  e ^(- i 2 pi  t frac(k ,N )n ))$
+    $ display(X _(k ) =  sum _(n = 0 )^(N - 1 ) x _(n ) dot.c  e ^(- i 2 pi  t frac(k ,N )n )) $
 ]
 
 The DFT itself has many applications outside of audio analysis. A close cousin of the DFT, the Discrete Cosine
@@ -243,7 +246,7 @@ a signal $U_T(t)$, whose Fourier transform is given by $|U_T(V)|^2$. The power s
 follows, using the definition in @Youngworth2005:
 
 #align(center)[
-    $display("PS" \(V \) =  frac(| U _(T )\(V \)| ^(2 ),N ^(2 )))$
+    $ display("PS" \(V \) =  frac(| U _(T )\(V \)| ^(2 ),N ^(2 ))) $
 ]
 
 Where $N$ is the total number of sample points.
@@ -251,7 +254,7 @@ Where $N$ is the total number of sample points.
 Then, the power spectral density can then be simply computed as:
 
 #align(center)[
-    $display( "PSD"(V) = frac("PS"(V), Delta v) )$
+    $ display( "PSD"(V) = frac("PS"(V), Delta v) ) $
 ]
 
 Where $Delta v$ is the space between data points in frequency space (so, the sampling rate).
@@ -265,7 +268,7 @@ quieter than the maximum possible sound a system can emit.
 The conversion from PSD to dBFS can be achieved as follows, given our signal $U_T(t)$:
 
 #align(center)[
-    $display("dbFS"_T(t) = sum_t log_10 ("PSD"(t)) / (max "PSD"))$
+    $ display("dbFS"_T(t) = sum_t log_10 ("PSD"(t)) / (max "PSD")) $
 ]
 
 Implementing the above in Python, this produces the plot in @fig:psd:
@@ -280,7 +283,7 @@ Also to note here is that we compute a metric known as _spectral energy_, which 
 "excitement" of the audio. It's computed as the magnitude squared of the FFT:
 
 #align(center)[
-    $display(S_E = sum_(i=0)^k "PSD"(i)^2)$
+    $ display(S_E = sum_(i=0)^k "PSD"(i)^2) $ <math:spectralEnergy>
 ]
 
 == Binning spectral data
@@ -316,7 +319,7 @@ visualisation. This mode first binds a framebuffer. Then, it draws the bars usin
 skybox as a cubemap, and finally draws the framebuffer using a special fragment shader to provide some
 post-processing effects.
 
-The diagram in @fig:renderpipe shows the rendering pipeline (next page):
+The diagram in @fig:renderpipe shows the rendering pipeline:
 
 #figure(
     image("img/renderpipe.drawio.svg", width: 70%),
@@ -325,25 +328,28 @@ The diagram in @fig:renderpipe shows the rendering pipeline (next page):
 
 == Initialisation
 SDL and glad are used to initialise the system platform. SDL is used to create the window, manage the audio
-context, and load the GL driver. glad is the OpenGL loader which allows the actual interfacing with the GL
-driver. One particularly important note to make regarding platform initialisation is the audio stream. For a
-music visualisation application, it's very important that the on-screen graphics are precisely synced to the
-audio being played. This means that a low-latency audio stream is required, one that is equal or smaller to
-the spectral data block size. I achieve this by using SDL's newer audio APIs, which allow resampling based on
-the platform audio driver's selection of what it believes is the best format. In the code, we request a
-particular low sampling rate using `SDL_AudioSpec`, but allow SDL to change the actual underlying
-datatype if it desires.
+context, and load the GL driver. glad is the OpenGL loader which provides the function and constant
+definitions from the OpenGL specification.
 
 At startup, the application is passed the path to the data directory and the name of the song to display. Once
 platform initialisation is complete, the FLAC audio is decoded using the dr_flac library, and the Cap'n Proto
 spectrum data is decoded using the C++ Cap'n Proto library. This is stored in the `cosc::SongData` class,
-which also handles mixing the audio into the SDL audio stream using `cosc::SongData::mixAudio`, which
-also handles resampling using SDL.
+which also handles mixing the audio into the SDL audio stream using `cosc::SongData::mixAudio`. The `mixAudio`
+routine also handles resampling using the SDL `AudioStream` API.
+
+One particularly important note to make regarding platform initialisation is the audio stream. For a
+music visualisation application, it's important that the on-screen graphics are precisely synchronised to the
+audio being played. This means that a low-latency audio stream is required, or in other words, an audio stream
+where the number of samples submitted to the audio driver per callback is less than or equal to the spectral
+data block size. I achieve this by using SDL's new audio APIs, which allow resampling based on the platform
+audio driver's selection of what it believes is the best format. In the code, we request a particular low
+sampling rate using `SDL_AudioSpec`, but allow SDL to change the actual underlying datatype if it desires. For
+example, while dr_flac uses signed 32-bit ints, SDL may prefer to resample to floats on some audio drivers.
 
 == Transforming and rendering bars
-Each frame, we query the `cosc::SongData` to figure out which spectrum block we are in, and use that to
-query the heights of all the bars from the decoded Cap'n Proto document. The heights are a `uint8_t`, so
-range from 0 to 255 inclusive. These are remapped to a float based on a configurable minimum and maximum
+Each frame, we query the `cosc::SongData` to figure out which spectrum block we are currently playing, and use
+that to query the heights of all the bars from the decoded Cap'n Proto document. The heights are a `uint8_t`,
+so range from 0 to 255 inclusive. These are remapped to a float based on a configurable minimum and maximum
 height.
 
 The spectrum itself simply consists of $N$ unit cubes. The cubes are transformed by means of a transformation
@@ -372,20 +378,23 @@ for (auto &bar : barModels) {
 
 The bar shader is almost identical to the shader used in the Graphics Minor Project.
 
-TODO copy n paste description.
+TODO copy n paste description of shader from minor.
 
 == Computing camera animations
 One of the goals I had in mind for the visualiser was automated and smooth camera animations, that would also
-not be too hard to describe in code. In order to do this though, the camera class from the Graphics Minor
+be quick to describe in code. However, in order to achieve this, the camera class from the Graphics Minor
 Project, which was based on code from LearnOpenGL, would need to be rewritten. There was also the need for a
-bug-free "freecam" mode, which can be moved around using the normal WASD and mouse controls. This is necessary
+bug-free "freecam" mode,
+#footnote[The LearnOpenGL camera had certain bugs regarding mouse rotation in freecam mode.]
+which can be moved around using the normal WASD and mouse controls. This is necessary
 for me to find the begin and end points for each animation and for debugging.
 
 The new camera is based on a slightly modified version of the perspective camera from the Cinder project
-@cinderCamera. The main difference compared to the previous LearnOpenGL camera, is that the new camera
-represents its pose as just a 3D vector and quaternion, rather than a set of vectors. This means that the pose
-of the camera can be described much more easily, and can also be interpolated to create animations. Other than
-that, it still outputs the same perspective and view matrices.
+@cinderCamera, which is a C++ creative coding framework. The main difference compared to the previous
+LearnOpenGL camera, is that the new camera represents its pose as just a 3D vector and quaternion, rather than
+a set of vectors. This means that the pose of the camera can be described much more easily, and can also be
+interpolated to create animations. Other than that, it still outputs the same perspective and view matrices,
+has an FOV and uses a perspective projection.
 
 To implement camera moves, I chose to represent any given move as a begin pose, end pose, and a duration. This
 is encoded in the `cosc::CameraAnimation` class. Then, in turn, a `cosc::CameraAnimationManager` is
@@ -429,7 +438,7 @@ public:
 Every frame, the `cosc::CameraAnimationManager` takes the delta time of the last frame and a spectral
 energy ratio, to compute the camera animations. The spectral energy ratio is simply the current spectral
 energy divided by the max spectral energy across the whole song. This lets us animate effects to the
-_intensity_ of the song, which we'll soon cover.
+_intensity_ of the song, which is covered in the next section.
 
 The CameraAnimationManager stores which of the animations it's currently in, and handles the logic to
 transition to the next animation. When the end of the animation list is reached, it's simply wrapped around
@@ -464,21 +473,66 @@ encode 3D rotations, and has a direct correlation to rotation matrices (TODO cit
 
 TODO
 
+== Camera shake
+In order to illustrate the intensity of the song at certain points, a camera shake effect was added to the
+`cosc::CameraAnimationManager`, which is computed alongside the existing camera move system.
+
+Camera shake is essentially applying pseudorandom perturbations to the camera's orientation quaternion (in
+other words, semi-randomly rotating the camera each tick). It turns out that _actual_ randomness does not look
+very natural, so instead, Simplex noise @simplexNoise is applied. Simplex noise is a very popular procedural
+gradient noise technique designed by Ken Perlin, who also designed the seminal Perlin noise technique. These
+types of gradient noise techniques are often used in video games for procedural terrain generation, e.g.
+Minecraft.
+
+Raw Simplex noise on its own is not flexible enough to control the camera shake as desired, so I also sum it
+together using fractal Brownian motion (fBm), using the technique described in @simplexFbm. The C++
+implementation of both fBm and Simplex noise was provided by @simplexLibrary. To actually shake the camera,
+I generate a noise value for each Euler axis, and apply it every frame.
+
+The result of Simplex noise combined with fBm is shown in @fig:fbm. This is a two dimensional image, where the
+noise value is seeded based on the $x$, $y$ pixel position. In our case, the noise value is seeded based on
+the time since the application has started, and a value of 1.0-3.0 for the roll, pitch and yaw Euler axes
+respectively.
+
+#figure(
+    image("img/simplexfbm.png", width: 80%),
+    caption: [ 2D Simplex noise with fractal Brownian motion ]
+) <fig:fbm>
+
+The magnitude of the shake is based on the spectral energy ratio, as defined in @math:spectralEnergy. That
+means that more "intense" moments in the song have more screen shake, and less intense moments have less
+shake. This scaling is applied separately to the fBm parameters.
+
 == Skybox cubemap
 The visualiser also draws a skybox using OpenGL's cubemap system. A cubemap is a 3D texture that is mapped to
-a cube volume that surrounds the environment. Assuming the texture has no visible seams on the edges of the
-cube volume, the cubemap gives the impression of a detailed space environment. This is a very common technique
-used in almost all video games. The space cubemap texture itself was generated using the tool in
-@tyroSpace, which uses procedural techniques.
+a cube volume that surrounds the environment (@fig:cubemap). Assuming the texture has no visible seams on the
+edges of the cube volume, the cubemap gives the impression of a detailed space environment. This is a very
+common technique used in almost all video games. The space cubemap texture itself was generated using the tool
+in @tyroSpace, which uses procedural techniques, coincidentally also using GLSL shaders.
 
-TODO talk about the depth optimisation.
+#figure(
+    image("img/cubemap.png", width: 50%),
+    caption: [ Demonstration of an OpenGL cubemap ]
+) <fig:cubemap>
+
+Based on a technique described in LearnOpenGL, the cubemap is able to be drawn last in the scene as an
+optimisation. This is achieved by the following snippet in the vertex shader:
+
+```glsl
+gl_Position = pos.xyww;
+```
+
+// TODO fact check this
+In the perspective division stage, the use of `xyww` ensures that the vertex of the skybox always appears
+behind any other vertices in the scene. For our case, this means that we can guarantee the skybox is drawn
+behind the spectrum bars, and that we don't _overdraw_ - which saves some calls to the fragment shader where
+other geometry in the scene obscures the skybox.
 
 == Post-processing effects
 The visualiser implements a simple post-processing pass that is run after the main scene is drawn. Currently,
 the only effect rendered is chromatic aberration. This is an "artistic touch", if you will, that I added to
-emphasise the _intensity_ of the song at certain points. The intensity is automatically calculated by
-the same metric used to drive the screen shake: spectral energy ratio (that is, current spectral energy $div$
-max spectral energy).
+emphasise the _intensity_ of the song at certain points. The intensity is again based on the spectral energy
+ratio from @math:spectralEnergy.
 
 Post-processing is achieved using OpenGL's framebuffer and renderbuffer system. The framebuffer is attached to
 the colour buffer, which is sampled in the fragment shader. The colour and stencil buffers are bound to the
@@ -526,3 +580,5 @@ configured to display any song with audio available.
 #pagebreak()
 
 #bibliography("major.bib", title: "References", style: "ieeemodified.csl")
+
+// TODO appendix for GitHub URL?
