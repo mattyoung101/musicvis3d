@@ -93,4 +93,4 @@ The space skybox was generated from: https://tools.wwwtyro.net/space-3d/index.ht
 The rest of the assets are made by me.
 
 ## Licence
-TBA
+Mozilla Public License 2.0
