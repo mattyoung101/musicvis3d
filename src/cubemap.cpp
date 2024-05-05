@@ -1,10 +1,10 @@
 #include "cosc/cubemap.hpp"
+#include "cosc/lib/stb_image.h"
 #include "cosc/shader.hpp"
 #include "glad/gl.h"
+#include <glm/mat3x3.hpp>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
-#include "cosc/lib/stb_image.h"
-#include <glm/mat3x3.hpp>
 
 // clang-format off
 constexpr float skyboxVertices[] = {
@@ -74,7 +74,7 @@ cosc::Cubemap::Cubemap(const fs::path &dataDir, const fs::path &cubeMapDir)
 
     std::vector<std::string> faces = { "right", "left", "top", "bottom", "front", "back" };
     int width, height, channels;
-    unsigned char *data;
+    unsigned char *data = nullptr;
     int i = 0;
     for (const auto &face : faces) {
         auto facePath = dataDir / cubeMapDir / (face + ".png");
@@ -88,7 +88,8 @@ cosc::Cubemap::Cubemap(const fs::path &dataDir, const fs::path &cubeMapDir)
         SPDLOG_DEBUG("Retrieved a {}x{} image with {} channels", width, height, channels);
 
         // submit to OpenGL
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (i++), 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (i++), 0, GL_RGB, width, height, 0, GL_RGBA,
+            GL_UNSIGNED_BYTE, data);
         // has been copied to the GPU presumably, so we can free it here
         stbi_image_free(data);
 
@@ -103,7 +104,7 @@ cosc::Cubemap::Cubemap(const fs::path &dataDir, const fs::path &cubeMapDir)
     // configure the shader
     // TODO what is going on here?
     shader.use();
-    shader.setInt("skybox", 0);
+    // shader.setInt("skybox", 0);
 }
 
 void cosc::Cubemap::draw(const Camera &camera) {

@@ -1,12 +1,12 @@
 #pragma once
-#include <filesystem>
-#include <vector>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 #include "cosc/mesh.hpp"
 #include "cosc/shader.hpp"
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+#include <filesystem>
 #include <glm/mat4x4.hpp>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -36,7 +36,7 @@ public:
     float yaw = 0.f;
 
     /// Current scale
-    glm::vec3 scale{0.f, 0.f, 0.f};
+    glm::vec3 scale { 0.f, 0.f, 0.f };
 
     /// Current position
     glm::vec3 pos { 0.f, 0.f, 0.f };
@@ -47,9 +47,9 @@ public:
     void applyTransform();
 
 private:
-    std::vector<Mesh> meshes {};
+    std::vector<Mesh> meshes;
     void processNode(aiNode *node, const aiScene *scene);
-    Mesh processMesh(aiMesh *mesh, const aiScene *scene);
+    Mesh processMesh(aiMesh *mesh);
 };
 
-};
+}; // namespace cosc

@@ -12,6 +12,6 @@ PointerAlignment: Right
 IndentCaseLabels: 'true'
 
 # glad is annoying, we have to do this so it doesn't #error us
-SortIncludes: false
+#SortIncludes: false
 
 ...

@@ -9,4 +9,4 @@ struct Vertex {
     glm::vec3 norm;
     glm::vec2 texCoords;
 };
-}
+} // namespace cosc

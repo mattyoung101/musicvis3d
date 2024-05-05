@@ -1,7 +1,6 @@
 #pragma once
 #include "cosc/camera.hpp"
 #include "cosc/shader.hpp"
-#include "cosc/util.hpp"
 
 namespace cosc {
 
@@ -24,4 +23,4 @@ private:
     unsigned int vao;
 };
 
-}
+} // namespace cosc

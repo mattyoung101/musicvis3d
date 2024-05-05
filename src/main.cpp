@@ -1,29 +1,32 @@
 #include "cosc/animation.hpp"
 #include "cosc/camera.hpp"
 #include "cosc/cubemap.hpp"
+#include "cosc/framebuffer.hpp"
 #include "cosc/intro.hpp"
 #include "cosc/model.hpp"
 #include "cosc/shader.hpp"
+#include "cosc/song_data.hpp"
 #include "cosc/util.hpp"
 #include "glad/gl.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_error.h>
-#include <SDL2/SDL_video.h>
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_mouse.h>
+#include <SDL2/SDL_video.h>
 #include <SDL_audio.h>
 #include <chrono>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <spdlog/spdlog.h>
-#include "cosc/song_data.hpp"
-#include "cosc/framebuffer.hpp"
 
 #if FULLSCREEN == 0
-static constexpr int WIDTH = 1600;
-static constexpr int HEIGHT = 900;
+constexpr int WIDTH = 1600;
+constexpr int HEIGHT = 900;
 #endif
 
+constexpr int AUDIO_SAMPLES = 128;
+
+// NOLINTBEGIN FIXME: This needs an entire rewrite as a VisState struct
 cosc::CameraPersp camera;
 cosc::CameraAnimationManager animationManager(camera);
 
@@ -48,6 +51,7 @@ float delta;
 float deltaSum;
 
 float introSlideTimer = 0.f;
+// NOLINTEND
 
 /// SDL audio callback
 static void audio_callback(void *userData, uint8_t *stream, int len) {
@@ -57,6 +61,7 @@ static void audio_callback(void *userData, uint8_t *stream, int len) {
 
 /// OpenGL message callback
 /// See: https://www.khronos.org/opengl/wiki/OpenGL_Error#Catching_errors_(the_easy_way)
+// NOLINTBEGIN OpenGL specified parameters, cannot change
 void GLAPIENTRY glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
     const GLchar *message, const void *userParam) {
     if (type == GL_DEBUG_TYPE_ERROR) {
@@ -65,6 +70,7 @@ void GLAPIENTRY glMessageCallback(GLenum source, GLenum type, GLuint id, GLenum 
         SPDLOG_INFO("GL INFO: {}", message);
     }
 }
+// NOLINTEND
 
 /// Load and construct bar models. The bar model is based on a unit cube exported from Blender.
 void constructBars(const cosc::SongData &songData, const std::string &dataDir) {
@@ -72,7 +78,7 @@ void constructBars(const cosc::SongData &songData, const std::string &dataDir) {
         SPDLOG_DEBUG("Adding bar {}/{}", i, songData.spectrum.getNumBars() - 1);
         auto model = cosc::Model(dataDir + "/cube.dae");
         // apply initial transform
-        model.pos.x = BAR_SPACING * i;
+        model.pos.x = BAR_SPACING * static_cast<float>(i);
         // initial uniform scaling
         model.scale = glm::vec3(BAR_SCALING, BAR_SCALING, BAR_SCALING);
         // make the bars a bit wider
@@ -89,6 +95,7 @@ void constructBars(const cosc::SongData &songData, const std::string &dataDir) {
 void addAnimations() {
     using namespace cosc;
 
+    // NOLINTBEGIN
     // clang-format off
     animationManager.addAnimations({
         CameraAnimation(
@@ -139,12 +146,13 @@ void addAnimations() {
         )
     });
     // clang-format on
+    // NOLINTEND
 }
 
 /// Poll SDL events
 void pollInputs() {
     SDL_Event event;
-    while (SDL_PollEvent(&event)) {
+    while (SDL_PollEvent(&event) != 0) {
         if (event.type == SDL_QUIT) {
             appStatus = cosc::AppStatus::QUIT;
         }
@@ -177,30 +185,31 @@ void pollInputs() {
             }
         }
         if (event.type == SDL_MOUSEMOTION && isCursorCapture && isFreeCam && cosc::isNotInIntro(appStatus)) {
-            camera.processMouseInput(event.motion.xrel, -event.motion.yrel);
+            camera.processMouseInput(
+                static_cast<float>(event.motion.xrel), static_cast<float>(-event.motion.yrel));
         }
     }
 
     // process continuous held down keys
-    auto keyState = SDL_GetKeyboardState(NULL);
-    bool boost = keyState[SDL_SCANCODE_LSHIFT];
+    const auto *const keyState = SDL_GetKeyboardState(nullptr);
+    bool boost = keyState[SDL_SCANCODE_LSHIFT] != 0u;
     if (isCursorCapture) {
-        if (keyState[SDL_SCANCODE_W]) {
+        if (keyState[SDL_SCANCODE_W] != 0u) {
             camera.processKeyboardInput(cosc::MOVE_FORWARD, delta, boost);
         }
-        if (keyState[SDL_SCANCODE_A]) {
+        if (keyState[SDL_SCANCODE_A] != 0u) {
             camera.processKeyboardInput(cosc::MOVE_LEFT, delta, boost);
         }
-        if (keyState[SDL_SCANCODE_S]) {
+        if (keyState[SDL_SCANCODE_S] != 0u) {
             camera.processKeyboardInput(cosc::MOVE_BACKWARD, delta, boost);
         }
-        if (keyState[SDL_SCANCODE_D]) {
+        if (keyState[SDL_SCANCODE_D] != 0u) {
             camera.processKeyboardInput(cosc::MOVE_RIGHT, delta, boost);
         }
-        if (keyState[SDL_SCANCODE_SPACE]) {
+        if (keyState[SDL_SCANCODE_SPACE] != 0u) {
             camera.processKeyboardInput(cosc::MOVE_UP, delta, boost);
         }
-        if (keyState[SDL_SCANCODE_LCTRL]) {
+        if (keyState[SDL_SCANCODE_LCTRL] != 0u) {
             camera.processKeyboardInput(cosc::MOVE_DOWN, delta, boost);
         }
     }
@@ -239,7 +248,7 @@ int main(int argc, char *argv[]) {
         // its output buffer is too many, and we can't figure out which block we're in! (i.e. we skip blocks
         // because we're diving by a larger number).
         // Just don't make this too small otherwise you'll eventually run into choppy audio.
-        .samples = 128,
+        .samples = AUDIO_SAMPLES,
         .callback = audio_callback,
         .userdata = static_cast<void *>(&songData),
     };
@@ -294,11 +303,11 @@ int main(int argc, char *argv[]) {
     SPDLOG_INFO("GL version: {}", (const char *) glGetString(GL_VERSION));
 
     // setup baseline GL stuff
-    int scrWidth;
-    int scrHeight;
+    int scrWidth = 0;
+    int scrHeight = 0;
     SDL_GetWindowSizeInPixels(window, &scrWidth, &scrHeight);
     glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(glMessageCallback, 0);
+    glDebugMessageCallback(glMessageCallback, nullptr);
     glViewport(0, 0, scrWidth, scrHeight);
     glEnable(GL_DEPTH_TEST);
 #if WIREFRAME == 1
@@ -393,7 +402,7 @@ int main(int argc, char *argv[]) {
                 // map that 0 to 255 to BAR_MIN_HEIGHT to BAR_MAX_HEIGHT
                 auto scale = cosc::util::mapRange(0., 255., BAR_MIN_HEIGHT, BAR_MAX_HEIGHT, barHeight);
                 // apply scale, also applying our baseline BAR_SCALING factor!
-                bar.scale.y = scale * BAR_SCALING;
+                bar.scale.y = static_cast<float>(scale * BAR_SCALING);
                 barIdx++;
 
                 // now update transforms, and off to the GPU we go!
@@ -413,9 +422,9 @@ int main(int argc, char *argv[]) {
         // calculate delta time
         auto end = std::chrono::steady_clock::now();
         // compute in nanoseconds (high resolution) then convert to seconds for delta time
-        delta = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1e9;
+        delta = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / NANO_TO_SEC;
         deltaSum += delta;
-        SPDLOG_TRACE("Delta: {:.2f} ms", delta * 1000.0);
+        SPDLOG_TRACE("Delta: {:.2f} ms", delta * MS_TO_SEC);
     }
 
     SPDLOG_DEBUG("Quitting");

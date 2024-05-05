@@ -1,6 +1,5 @@
 #pragma once
 #include "cosc/shader.hpp"
-#include "cosc/util.hpp"
 #include <vector>
 
 namespace cosc {
@@ -16,7 +15,7 @@ private:
     cosc::Shader shader;
     /// Index in this array is the slide number (0, 1, 2) and the value is the GL texture ID.
     std::vector<unsigned int> textureIds;
-    unsigned int vbo;
-    unsigned int vao;
+    unsigned int vbo = 0;
+    unsigned int vao = 0;
 };
-}
+} // namespace cosc

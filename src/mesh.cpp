@@ -30,28 +30,36 @@ void cosc::Mesh::setupMesh() {
 }
 
 void cosc::Mesh::draw(cosc::Shader &shader) const {
-    unsigned int diffuseNr = 1;
-    unsigned int specularNr = 1;
-
-    for (unsigned int i = 0; i < textures.size(); i++) {
-        // activate the texture unit
-        glActiveTexture(GL_TEXTURE0 + i);
-
-        // retrieve texture number
-        std::string number;
-        auto name = textures[i].type;
-        if (name == "texture_diffuse") {
-            number = std::to_string(diffuseNr++);
-        } else if (name == "texture_specular") {
-            number = std::to_string(specularNr++);
-        } else {
-            SPDLOG_WARN("Unhandled texture name: {}", name);
-        }
-
-        shader.setInt(("material." + name + number).c_str(), i);
-        glBindTexture(GL_TEXTURE_2D, textures[i].id);
-    }
-    glActiveTexture(GL_TEXTURE0);
+    // FIXME: Remove this block fully if not required by a future bar-refraction shader
+    //
+    // unsigned int diffuseNr = 1;
+    // unsigned int specularNr = 1;
+    //
+    // for (unsigned int i = 0; i < textures.size(); i++) {
+    //     // activate the texture unit
+    //     glActiveTexture(GL_TEXTURE0 + i);
+    //
+    //     // retrieve texture number
+    //     std::string number;
+    //     auto name = textures[i].type;
+    //     if (name == "texture_diffuse") {
+    //         number = std::to_string(diffuseNr++);
+    //     } else if (name == "texture_specular") {
+    //         number = std::to_string(specularNr++);
+    //     } else {
+    //         SPDLOG_WARN("Unhandled texture name: {}", name);
+    //     }
+    //
+    //     std::string shaderName = "material.";
+    //     shaderName += name;
+    //     shaderName += number;
+    //
+    //     SPDLOG_DEBUG("Handle texture!!!");
+    //
+    //     shader.setInt(shaderName.c_str(), i);
+    //     glBindTexture(GL_TEXTURE_2D, textures[i].id);
+    // }
+    // glActiveTexture(GL_TEXTURE0);
 
     // draw mesh
     glBindVertexArray(vao);

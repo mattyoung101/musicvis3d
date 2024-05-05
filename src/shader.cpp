@@ -1,10 +1,10 @@
 #include "cosc/shader.hpp"
 #include "cosc/util.hpp"
+#include "glad/gl.h"
 #include <exception>
 #include <filesystem>
-#include <spdlog/spdlog.h>
-#include "glad/gl.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <spdlog/spdlog.h>
 
 cosc::Shader::Shader(const fs::path &vertexPath, const fs::path &fragmentPath) {
     SPDLOG_INFO("Loading shader. Vertex: {}, fragment: {}", vertexPath.string(), fragmentPath.string());
@@ -87,7 +87,7 @@ void cosc::Shader::setMat3(const std::string &name, const glm::mat3 &value) {
 }
 
 void cosc::Shader::setVec3(const std::string &name, const glm::vec3 &value) {
-    glUniform3fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, glm::value_ptr(value)); 
+    glUniform3fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, glm::value_ptr(value));
 }
 
 cosc::Shader::~Shader() {

@@ -1,10 +1,10 @@
 #pragma once
-#include <vector>
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
 #include "cosc/shader.hpp"
 #include "cosc/texture.hpp"
 #include "cosc/vertex.hpp"
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <vector>
 
 namespace cosc {
 
@@ -12,14 +12,15 @@ namespace cosc {
 /// Based on: https://learnopengl.com/Model-Loading/Mesh
 class Mesh {
 public:
-    std::vector<Vertex> verts {};
-    std::vector<unsigned int> indices {};
-    std::vector<Texture> textures {};
+    std::vector<Vertex> verts;
+    std::vector<unsigned int> indices;
+    std::vector<Texture> textures;
 
-    explicit Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
-        : verts(vertices)
-        , indices(indices)
-        , textures(textures) {
+    explicit Mesh(
+        std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
+        : verts(std::move(vertices))
+        , indices(std::move(indices))
+        , textures(std::move(textures)) {
         setupMesh();
     }
 
@@ -30,4 +31,4 @@ private:
     void setupMesh();
 };
 
-};
+}; // namespace cosc

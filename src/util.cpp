@@ -1,7 +1,7 @@
 #include "cosc/util.hpp"
+#include <filesystem>
 #include <fstream>
 #include <spdlog/spdlog.h>
-#include <filesystem>
 #include <sstream>
 
 namespace fs = std::filesystem;

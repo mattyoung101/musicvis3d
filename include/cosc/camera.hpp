@@ -1,23 +1,22 @@
 #pragma once
-#include <algorithm>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/geometric.hpp>
-#include <glm/vec3.hpp>
-#include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
 #include <spdlog/spdlog.h>
 
 namespace cosc {
 
-typedef enum {
+using MovementType_t = enum {
     MOVE_FORWARD,
     MOVE_BACKWARD,
     MOVE_LEFT,
     MOVE_RIGHT,
     MOVE_UP,
     MOVE_DOWN
-} MovementType_t;
+};
 
 /// The pose of a camera, with its position and orientation.
 class CameraPose {
@@ -253,8 +252,8 @@ protected:
     virtual void calcInverseView() const;
     virtual void calcProjection() const = 0;
 
-    void getClipCoordinates(float clipDist, float ratio, glm::vec3 *topLeft, glm::vec3 *topRight, glm::vec3 *bottomLeft,
-        glm::vec3 *bottomRight) const;
+    void getClipCoordinates(float clipDist, float ratio, glm::vec3 *topLeft, glm::vec3 *topRight,
+        glm::vec3 *bottomLeft, glm::vec3 *bottomRight) const;
     void dirtyViewCaches() {
         mModelViewCached = mInverseModelViewCached = false;
     }
@@ -366,4 +365,4 @@ protected:
     void calcProjection() const override;
 };
 
-};
+}; // namespace cosc

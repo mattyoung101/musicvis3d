@@ -1,6 +1,5 @@
 #pragma once
 #include "cosc/shader.hpp"
-#include "cosc/util.hpp"
 namespace cosc {
 
 class FrameBuffer {
@@ -11,7 +10,7 @@ public:
     explicit FrameBuffer(const fs::path &dataDir, const std::string &postShader, int width, int height);
 
     /// Binds the framebuffer. Draw calls will go then to the framebuffer.
-    void bind(void);
+    void bind();
 
     /// Draws the framebuffer to the screen
     void draw(float spectralEnergyRatio);
@@ -31,4 +30,4 @@ private:
     cosc::Shader quadShader;
 };
 
-}
+} // namespace cosc

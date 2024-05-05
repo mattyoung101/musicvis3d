@@ -27,8 +27,8 @@ public:
     }
 
     void addAnimations(const std::vector<CameraAnimation> &animation) {
-        for (const auto &a : animation) {
-            animations.emplace_back(a);
+        for (const auto &anim : animation) {
+            animations.emplace_back(anim);
         }
     }
 
@@ -40,16 +40,16 @@ public:
     }
 
 private:
-    Camera &camera;
-    std::vector<CameraAnimation> animations{};
+    Camera &camera; // NOLINT We control a camera, therefore we need a reference
+    std::vector<CameraAnimation> animations;
     /// True when we are advancing animations
     bool nextAnimation = true;
     /// Elapsed time in this animation
-    float elapsed;
+    float elapsed = 0.0;
     /// Current animation index
     int curIdx = -1; // it will be incremented to 0 on the first run this way, kinda hacky
     /// Actual total delta
-    float total;
+    float total = 0.0;
 };
 
-}
+} // namespace cosc

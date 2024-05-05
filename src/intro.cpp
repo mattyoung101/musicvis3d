@@ -5,7 +5,7 @@
 
 // clang-format off
 // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-static float quadVertices[] = {
+static const float quadVertices[] = {
     // positions   // texCoords
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
@@ -25,8 +25,10 @@ cosc::IntroManager::IntroManager(const fs::path &dataDir)
     : shader(cosc::Shader(dataDir / "quad.vert.glsl", dataDir / "quad.frag.glsl")) {
     SPDLOG_INFO("Initialising IntroManager");
 
-    int width, height, channels;
-    unsigned char *data;
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    unsigned char *data = nullptr;
 
     SPDLOG_DEBUG("Generating intro quad mesh data");
     glGenVertexArrays(1, &vao);
@@ -53,7 +55,7 @@ cosc::IntroManager::IntroManager(const fs::path &dataDir)
         SPDLOG_DEBUG("Retrieved a {}x{} image with {} channels", width, height, channels);
 
         // generate a GL texture id
-        unsigned int texId;
+        unsigned int texId = 0;
         glGenTextures(1, &texId);
         glBindTexture(GL_TEXTURE_2D, texId);
         // submit to OpenGL

@@ -1,7 +1,6 @@
 #pragma once
-#include <string>
-#include <vector>
 #include <filesystem>
+#include <string>
 
 namespace fs = std::filesystem;
 
@@ -17,7 +16,7 @@ namespace fs = std::filesystem;
 #define WIREFRAME 0
 
 /// If true, skip intro
-#define SKIP_INTRO 1
+#define SKIP_INTRO 0
 
 /// Units between bars
 constexpr float BAR_SPACING = 2.5;
@@ -40,6 +39,12 @@ constexpr float INTRO_SLIDE_TIME = 3.0;
 /// Number of intro slides
 constexpr size_t INTRO_NUM_SLIDES = 3;
 
+/// Multiply to convert milliseconds to seconds
+constexpr float MS_TO_SEC = 1000.0;
+
+/// Divide to convert nanoseconds to seconds
+constexpr float NANO_TO_SEC = 1e9;
+
 namespace cosc {
 enum class AppStatus {
     INTRO = 1,
@@ -59,7 +64,7 @@ constexpr bool isInIntro(AppStatus status) {
     return status == AppStatus::INTRO;
 }
 
-};
+}; // namespace cosc
 
 namespace cosc::util {
 
@@ -74,4 +79,4 @@ constexpr double mapRange(
         + (value - inRangeStart) * (outRangeEnd - outRangeStart) / (inRangeEnd - inRangeStart);
 }
 
-};
+}; // namespace cosc::util

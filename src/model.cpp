@@ -31,7 +31,7 @@ void cosc::Model::processNode(aiNode *node, const aiScene *scene) {
     // process all the node's meshes (if any)
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(mesh, scene));
+        meshes.push_back(processMesh(mesh));
     }
 
     // then do the same for each of its children
@@ -40,7 +40,7 @@ void cosc::Model::processNode(aiNode *node, const aiScene *scene) {
     }
 }
 
-cosc::Mesh cosc::Model::processMesh(aiMesh *mesh, const aiScene *scene) {
+cosc::Mesh cosc::Model::processMesh(aiMesh *mesh) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;

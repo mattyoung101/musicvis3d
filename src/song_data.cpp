@@ -1,15 +1,15 @@
 #include "cosc/song_data.hpp"
+#include "cosc/lib/dr_flac.h"
+#include "cosc/util.hpp"
+#include "proto/MusicVis.capnp.h"
 #include <SDL2/SDL_audio.h>
-#include <cstring>
-#include <filesystem>
-#include <spdlog/spdlog.h>
+#include <algorithm>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
-#include "cosc/lib/dr_flac.h"
+#include <cstring>
 #include <fcntl.h>
-#include "proto/MusicVis.capnp.h"
-#include <algorithm>
-#include "cosc/util.hpp"
+#include <filesystem>
+#include <spdlog/spdlog.h>
 
 namespace fs = std::filesystem;
 
@@ -75,8 +75,7 @@ cosc::SongData::SongData(const fs::path &dataDir, const fs::path &songName) {
 }
 
 void cosc::SongData::setupAudio(SDL_AudioFormat wanted, SDL_AudioFormat obtained) {
-    audioStream = SDL_NewAudioStream(wanted, channels, sampleRate,
-                                     obtained, channels, sampleRate);
+    audioStream = SDL_NewAudioStream(wanted, channels, sampleRate, obtained, channels, sampleRate);
     // shove all the data through the stream
     // seems as though we have to do x2 since there are two stereo channels? and audioLen is PCM frames?
     SDL_AudioStreamPut(audioStream, audio, audioLen * sizeof(int32_t) * channels);
@@ -110,8 +109,8 @@ void cosc::SongData::mixAudio(uint8_t *stream, int len) {
     // and the block position should then be that divided by the block size
     blockPos = audioPos / spectrum.getBlockSize();
     SPDLOG_TRACE("Sample position: {}/{} ({:.2f}%), Block position: {}/{}", audioPos, audioLen,
-                 (static_cast<double>(audioPos) / static_cast<double>(audioLen)) * 100.f, blockPos,
-                 spectrum.getBlocks().size());
+        (static_cast<double>(audioPos) / static_cast<double>(audioLen)) * 100.f, blockPos,
+        spectrum.getBlocks().size());
 }
 
 cosc::SongData::~SongData() {

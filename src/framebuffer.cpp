@@ -1,11 +1,11 @@
 #include "cosc/framebuffer.hpp"
+#include "glad/gl.h"
 #include <spdlog/spdlog.h>
 #include <stdexcept>
-#include "glad/gl.h"
 
 // clang-format off
 // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-static float quadVertices[] = {
+static const float quadVertices[] = {
     // positions   // texCoords
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
@@ -60,14 +60,13 @@ cosc::FrameBuffer::FrameBuffer(const fs::path &dataDir, const std::string &postS
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         throw std::runtime_error("GL says framebuffer is incomplete!");
-    } else {
-        SPDLOG_DEBUG("Framebuffer is complete");
     }
+    SPDLOG_DEBUG("Framebuffer is complete");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void cosc::FrameBuffer::bind(void) {
+void cosc::FrameBuffer::bind() {
     if (bound) {
         throw std::runtime_error("Framebuffer is already bound, cannot bind again");
     }

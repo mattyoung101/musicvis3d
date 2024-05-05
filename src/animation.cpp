@@ -2,10 +2,10 @@
 #include <glm/gtc/quaternion.hpp>
 #include <spdlog/spdlog.h>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/easing.hpp>
-#include <glm/gtc/noise.hpp>
 #include "cosc/lib/Simplex.h"
 #include "cosc/util.hpp"
+#include <glm/gtc/noise.hpp>
+#include <glm/gtx/easing.hpp>
 
 // Simplex noise parameters
 constexpr float GAIN = 1.0f;
@@ -20,6 +20,10 @@ constexpr float MAX_FOV = 65.f;
 // Camera shake config, either shake the camera rotation, or shake FOV, or both
 constexpr bool SHAKE_ORIENTATION = true;
 constexpr bool SHAKE_FOV = false;
+
+constexpr float AXIS_X = 0.0;
+constexpr float AXIS_Y = 1.0;
+constexpr float AXIS_Z = 2.0;
 
 void cosc::CameraAnimationManager::update(float delta, float spectralEnergyRatio) {
     if (animations.empty()) {
@@ -58,9 +62,9 @@ void cosc::CameraAnimationManager::update(float delta, float spectralEnergyRatio
 
         // camera shake based on Simplex noise under fractal Brownian motion.
         // note that the value is noise seed is based on the total time and axis
-        auto shakeX = Simplex::fBm(glm::vec2 { total, 0.0 }, OCTAVES, LANCUNARITY, GAIN) * scale;
-        auto shakeY = Simplex::fBm(glm::vec2 { total, 1.0 }, OCTAVES, LANCUNARITY, GAIN) * scale;
-        auto shakeZ = Simplex::fBm(glm::vec2 { total, 2.0 }, OCTAVES, LANCUNARITY, GAIN) * scale;
+        auto shakeX = Simplex::fBm(glm::vec2 { total, AXIS_X }, OCTAVES, LANCUNARITY, GAIN) * scale;
+        auto shakeY = Simplex::fBm(glm::vec2 { total, AXIS_Y }, OCTAVES, LANCUNARITY, GAIN) * scale;
+        auto shakeZ = Simplex::fBm(glm::vec2 { total, AXIS_Z }, OCTAVES, LANCUNARITY, GAIN) * scale;
 
         // apply camera shake
         orientation = glm::rotate(orientation, shakeX, glm::vec3(1.0, 0.0, 0.0));
@@ -74,7 +78,7 @@ void cosc::CameraAnimationManager::update(float delta, float spectralEnergyRatio
     if constexpr (SHAKE_FOV) {
         // apply FOV
         auto fov = cosc::util::mapRange(0.0, 1.0, MIN_FOV, MAX_FOV, spectralEnergyRatio);
-        camera.setFov(fov);
+        camera.setFov(static_cast<float>(fov));
     }
 
     elapsed += delta;

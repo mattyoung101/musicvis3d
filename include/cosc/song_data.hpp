@@ -1,24 +1,18 @@
 #pragma once
+#include "cosc/lib/dr_flac.h"
+#include "cosc/util.hpp" // this is used, but clang-tidy cannot detect it correctly
+#include "proto/MusicVis.capnp.h"
 #include <SDL2/SDL_audio.h>
+#include <capnp/message.h>
+#include <capnp/serialize-packed.h>
 #include <cstdint>
 #include <memory>
 #include <string>
-#include "cosc/lib/dr_flac.h"
-#include "proto/MusicVis.capnp.h"
-#include <capnp/message.h>
-#include <capnp/serialize-packed.h>
-#include "cosc/util.hpp"
 
 namespace cosc {
 /// Encapsulates decoded song data.
 class SongData {
 public:
-    /// Song name
-    std::string name;
-
-    /// Deserialised music vis spectrum data
-    MusicVisBars::Reader spectrum;
-
     /**
      * Load song data. This will both load the FLAC file and the Cap'n Proto serialised spectrum.
      * @param dataDir path to data dir
@@ -26,6 +20,8 @@ public:
      */
     explicit SongData(const fs::path &dataDir, const fs::path &songName);
     ~SongData();
+
+    // TODO other constructors
 
     /// Sets up the SDL audio stream with the obtained audio config from the sound driver.
     void setupAudio(SDL_AudioFormat wanted, SDL_AudioFormat obtained);
@@ -35,6 +31,12 @@ public:
      * If the audio playback is finished, no bytes will be mixed.
      */
     void mixAudio(uint8_t *stream, int len);
+
+    /// Song name
+    std::string name;
+
+    /// Deserialised music vis spectrum data
+    MusicVisBars::Reader spectrum;
 
     /// Current audio position in samples
     size_t audioPos = 0;
@@ -57,4 +59,4 @@ private:
     drflac_uint64 audioLen = 0;
     SDL_AudioStream *audioStream;
 };
-}
+} // namespace cosc

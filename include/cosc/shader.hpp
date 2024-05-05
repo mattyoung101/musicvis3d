@@ -1,7 +1,7 @@
 #pragma once
-#include <string>
+#include "cosc/util.hpp" // this is used, but clang-tidy cannot detect it correctly
 #include <glm/mat4x4.hpp>
-#include "cosc/util.hpp"
+#include <string>
 
 namespace cosc {
 
@@ -9,12 +9,11 @@ namespace cosc {
 /// Based on: https://learnopengl.com/Getting-started/Shaders
 class Shader {
 public:
-    /// Shader program GL ID
-    unsigned int shaderProgram;
-
     explicit Shader(const fs::path &vertexPath, const fs::path &fragmentPath);
 
     ~Shader();
+
+    // TODO other constructors (copy constructor etc)
 
     void use();
 
@@ -24,6 +23,10 @@ public:
     void setMat4(const std::string &name, const glm::mat4 &value);
     void setMat3(const std::string &name, const glm::mat3 &value);
     void setVec3(const std::string &name, const glm::vec3 &value);
+
+private:
+    /// Shader program GL ID
+    unsigned int shaderProgram;
 };
 
-};
+}; // namespace cosc
