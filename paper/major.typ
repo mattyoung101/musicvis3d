@@ -127,9 +127,9 @@ with an ever so slightly longer decode time.
 == Visualiser
 The visualiser is what we see on the screen, the real-time rendering system that displays the bars, once the
 spectral data has been computed. It is written in C++20, uses the OpenGL graphics API, and is built using
-industry standard tools CMake, Ninja and the Clang compiler. This code runs "online", meaning it runs in
-real-time and we would ideally like to spend no longer than 16 ms per frame (for 60 FPS). It uses a number of
-open-source libraries:
+industry standard tools CMake, Ninja and the Clang compiler. The Clang-Tidy and Clang-Format tools are used to
+ensure high quality code. This code runs "online", meaning it runs in real-time and we would ideally like to
+spend no longer than 16 ms per frame (for 60 FPS). It uses a number of open-source libraries:
 
 - *SDL2*: Platform window management, keyboard/mouse inputs, OpenGL context creation
 - *glad*: For OpenGL function loading and feature queries
@@ -322,7 +322,7 @@ post-processing effects.
 The diagram in @fig:renderpipe shows the rendering pipeline:
 
 #figure(
-    image("img/renderpipe.drawio.svg", width: 70%),
+    image("img/renderpipe.drawio.svg", width: 75%),
     caption: [ Diagram of graphics render pipeline ]
 ) <fig:renderpipe>
 
@@ -567,7 +567,9 @@ Future improvements, etc.
 
 = Self-assessment
 I'm really proud of the work I achieved for this project. The visualiser turned out better than I was hoping
-for, and I was able to achieve everything I set out to.
+for, and I was able to achieve everything I set out to, and I was even able to complete a lot of the extension
+tasks I set myself. This was all made possible because I started extremely early (just after the Graphics
+Minor Project was finished), and worked on the project all basically all semester.
 
 = Conclusion
 In this paper, I present a 3D music visualisation application using OpenGL and the Discrete Fourier
@@ -576,6 +578,21 @@ DFT, is implemented in Python. The visualisation application, which loads the co
 implemented using C++. It has graphics features such as camera animations, camera shake, a cubemap skybox, and
 a post-processing path that implements chromatic aberration, and an intro section. The application can be
 configured to display any song with audio available.
+
+#pagebreak()
+
+= Appendix A: Special thanks
+- *Angus* and *Henry*, for always listening to my nonsense inside and outside the COSC pracs.
+    Good to have beers with you guys - thanks for being real ones, and the best of luck in your own projects.
+- *Joey de Vries* of LearnOpenGL, for providing one of the best graphics programming resources.
+- *Laura Brehm*, *Mr FijiWiji*, *AGNO3* and *Animadrop*, for producing great music.
+- The authors and contributors of: SDL2, glad, glm, Cap'n Proto, dr_flac, stb_image, NumPy, SciPy,
+    spectrum.py, Simplex.h - such a project could not even be remotely achieved without the generous efforts of
+    these talented programmers.
+- *Paul Houx* of The Cinder Project, for the quaternion camera. The camera animations would not have been at
+    all possible without this extremely polished perspective camera implementation.
+
+This document was typeset using #link("https://github.com/typst/typst")[Typst].
 
 #pagebreak()
 
