@@ -279,9 +279,9 @@ int main(int argc, char *argv[]) {
     }
 
 #if FULLSCREEN == 0
-    SDL_Window *window
-        = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    SDL_Window *window = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)",
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 #else
     SDL_Window *window = SDL_CreateWindow("COSC3000 Major Project (Computer Graphics)", 0, 0, 0, 0,
         SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP);
@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
     // setup baseline GL stuff
     int scrWidth = 0;
     int scrHeight = 0;
-    SDL_GetWindowSizeInPixels(window, &scrWidth, &scrHeight);
+    SDL_GL_GetDrawableSize(window, &scrWidth, &scrHeight);
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(glMessageCallback, nullptr);
     glViewport(0, 0, scrWidth, scrHeight);

@@ -275,8 +275,7 @@ Implementing the above in Python, this produces the plot in @fig:psd:
 
 #figure(
     image("img/psd.png", width: 80%),
-    caption: [  Power spectral density (PSD) in dbFS of a block of audio from the song "Saturn's Air" by
-    artist Animadrop. ]
+    caption: [  Power spectral density (PSD) in dbFS of a block of audio ]
 ) <fig:psd>
 
 Also to note here is that we compute a metric known as _spectral energy_, which is a measure of the
@@ -314,7 +313,15 @@ fullscreen textured quad displays three introduction slides which display the pr
 song name #footnote[At this time, the song name is hardcoded and has to be manually changed when the song is
 changed].
 
-Once this is completed, the application transitions into "running" mode, which performs the actual
+The image in @fig:intro shows the construction of the intro slides, which are static images designed in
+Inkscape and exported to PNGs.
+
+#figure(
+    image("img/intro.png", width: 100%),
+    caption: [ Construction of intro slide images in Inkscape ]
+) <fig:intro>
+
+Once the intro is completed, the application transitions into "running" mode, which performs the actual
 visualisation. This mode first binds a framebuffer. Then, it draws the bars using a GLSL shader, then the
 skybox as a cubemap, and finally draws the framebuffer using a special fragment shader to provide some
 post-processing effects.
@@ -376,9 +383,35 @@ for (auto &bar : barModels) {
 }
 ```
 
-The bar shader is almost identical to the shader used in the Graphics Minor Project.
+The bar shader is almost identical to the shader used in the Graphics Minor Project. This shader has a lot in
+common with a simple Phong  @Phong1975IlluminationFC specular model, and was was based on the Phong specular
+calculations from LearnOpenGL @learnOpenGLLighting. The main work is this small block of GLSL:
 
-TODO copy n paste description of shader from minor.
+```glsl
+// compute angle of this fragment's normal against the camera
+vec3 norm = normalize(Normal);
+vec3 viewDir = normalize(viewPos - FragPos);
+float angle = max(dot(norm, viewDir), 0.0);
+```
+
+For the vertex that this fragment is attached to, we normalise its normal vector (i.e., we compute the unit
+vector from the given normal vector). The `viewPos` uniform refers to the camera's current xyz position, and
+the `FragPos` uniform refers to the world-space transformed fragment coordinates that we computed in the
+vertex shader - all based on the model transform matrix. Finally, we're able to compute the angle between
+these two vectors by taking the dot product, and clamping it to be above 0.0 using `max`.
+
+Now that we have a single float describing the angle between the camera and the model, we need to transform
+that into an RGB value for coloured shading. This can be achieved using a colour map, in this case, "Inferno"
+from Matplotlib. I used a polynomial approximation from @infernoGLSL, instead of the usual 256-element lookup
+table, which works better for fragment shaders.
+
+The final composite is very simple: the fragment colour is just set to the RGB value that Inferno returned:
+
+```glsl
+FragColor = vec4(inferno(angle), 1.0f);
+```
+
+A good reference for how this directional lighting is @fig:skyboxscr.
 
 == Computing camera animations
 One of the goals I had in mind for the visualiser was automated and smooth camera animations, that would also
@@ -453,7 +486,10 @@ auto pos = glm::mix(anim.begin.pos, anim.end.pos, progress); // performs linear 
 camera.setEyePoint(pos);
 ```
 
-The `progress` value ranges from 0.0 to 1.0 and is computed by `elapsed / anim.duration`.
+The `progress` value ranges from 0.0 to 1.0 and is computed by `elapsed / anim.duration`. It was also
+experimented using more complex interpolation (usually called "tweening" in the games industry), such as
+quadratic interpolation. Surprisingly, linear interpolation continued to look much better and was retained as
+the final interpolation method.
 
 Animating the orientation of the camera is much more difficult. There are a number of ways of
 expressing 3D orientations, the two main paradigms being Euler angles and quaternions. Euler angles represent
@@ -511,7 +547,7 @@ common technique used in almost all video games. The space cubemap texture itsel
 in @tyroSpace, which uses procedural techniques, coincidentally also using GLSL shaders.
 
 #figure(
-    image("img/cubemap.png", width: 50%),
+    image("img/cubemap.png", width: 55%),
     caption: [ Demonstration of an OpenGL cubemap ]
 ) <fig:cubemap>
 
@@ -527,6 +563,13 @@ In the perspective division stage, the use of `xyww` ensures that the vertex of 
 behind any other vertices in the scene. For our case, this means that we can guarantee the skybox is drawn
 behind the spectrum bars, and that we don't _overdraw_ - which saves some calls to the fragment shader where
 other geometry in the scene obscures the skybox.
+
+The skybox is shown in-app in @fig:skyboxscr:
+
+#figure(
+    image("img/skyboxscr.jpg", width: 75%),
+    caption: [ Screenshot of two angles of the skybox in the visualiser ]
+) <fig:skyboxscr>
 
 == Post-processing effects
 The visualiser implements a simple post-processing pass that is run after the main scene is drawn. Currently,
@@ -555,7 +598,7 @@ colour.a = 1.0;
 The result is shown in @fig:chromatic:
 
 #figure(
-    image("img/chromatic_small.png", width: 70%),
+    image("img/chromatic.png", width: 75%),
     caption: [ Screenshot of visualisation application showing chromatic aberration effect ]
 ) <fig:chromatic>
 
@@ -563,13 +606,47 @@ The result is shown in @fig:chromatic:
 // \section{Results}
 
 = Discussion
-Future improvements, etc.
+Overall, the application was completed to a very functional standard and could be considered stable enough for
+real live presentations. However, as always with these sorts of projects, there's much that can be improved.
+
+Here's a list of good targets for future improvement and research:
+
+- Refactoring the render pipeline, especially `main.cpp`, to have a `Renderer` interface with `IntroRenderer`
+    and `MainRenderer` sub-classes; plus a proper state machine to switch between them
+- Make "state" less ugly - we would like to avoid having as many globals as we currently have
+    - Not always easy in graphics
+- Add the ability to easily stack multiple post-processing passes. Ideally, the `Framebuffer` class would be
+    written into a `PostFX` class that has a `addPass(const Shader &shader)` method.
+- Serialise camera animations to disk using JSON, make a proper editor for them with a timeline, and make it
+    animations depend on the song being played
+- More advanced and dynamic lighting for the bars
+    - Including reflection mapping: Projecting the cubemap skybox onto the bars
+- Most post-processing effects, on the glitchy side of things
+- Dynamically render intro text based on song being played, using FreeType
+- Bloom post-effect
+    - Requires HDR rendering pipeline (separate task)
+- Colour correction and tonemapping
+    - Also requires HDR rendering pipeline
+    - Tonemapping can be done for example using the ACES curve @acesTone
+
+Additionally, here are some more zany ideas for long-term future improvement:
+
+- Move to a fully online audio architecture all in C++, capture sound from loopback device using PipeWire
+    - This would eliminate the need for offline audio processing entirely
+- Song lyrics displayed as 3D text that flies around
+    - Requires additional serialisation and animations
+- More content in the background
+    - Hard to describe, but I was considering a particle system based on the human head which disintegrates
+        and re-forms based on the spectral energy.
+- Use Vulkan instead of OpenGL
 
 = Self-assessment
 I'm really proud of the work I achieved for this project. The visualiser turned out better than I was hoping
 for, and I was able to achieve everything I set out to, and I was even able to complete a lot of the extension
 tasks I set myself. This was all made possible because I started extremely early (just after the Graphics
 Minor Project was finished), and worked on the project all basically all semester.
+
+TODO
 
 = Conclusion
 In this paper, I present a 3D music visualisation application using OpenGL and the Discrete Fourier

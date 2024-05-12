@@ -20,10 +20,15 @@ constexpr float MAX_FOV = 65.f;
 // Camera shake config, either shake the camera rotation, or shake FOV, or both
 constexpr bool SHAKE_ORIENTATION = true;
 constexpr bool SHAKE_FOV = false;
+constexpr bool SCALE_CAMERA_MOVES = false;
 
 constexpr float AXIS_X = 0.0;
 constexpr float AXIS_Y = 1.0;
 constexpr float AXIS_Z = 2.0;
+
+// Allow spectral energy ratio to make animation half as slow, or half as fast
+constexpr float ELAPSED_SCALE_MIN = 0.1;
+constexpr float ELAPSED_SCALE_MAX = 10.0;
 
 void cosc::CameraAnimationManager::update(float delta, float spectralEnergyRatio) {
     if (animations.empty()) {
@@ -81,6 +86,17 @@ void cosc::CameraAnimationManager::update(float delta, float spectralEnergyRatio
         camera.setFov(static_cast<float>(fov));
     }
 
-    elapsed += delta;
+    // optionally scale movement amount using the spectral energy - scale within bounds
+    // map spectral energy ratio to a multiplier that can be used to scale the delta time
+    // this gives the visualiser that stutter-y "stop and go" look that some on YouTube also have
+    if constexpr (SCALE_CAMERA_MOVES) {
+        double deltaScalar
+            = cosc::util::mapRange(0.0, 1.0, ELAPSED_SCALE_MIN, ELAPSED_SCALE_MAX, spectralEnergyRatio);
+        elapsed += static_cast<float>(deltaScalar) * delta;
+    } else {
+        elapsed += delta;
+    }
+
+    // total is unaffected since it's used for noise
     total += delta;
 }
