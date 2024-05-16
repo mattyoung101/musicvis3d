@@ -20,15 +20,15 @@ constexpr float MAX_FOV = 65.f;
 // Camera shake config, either shake the camera rotation, or shake FOV, or both
 constexpr bool SHAKE_ORIENTATION = true;
 constexpr bool SHAKE_FOV = false;
-constexpr bool SCALE_CAMERA_MOVES = false;
+constexpr bool SCALE_CAMERA_MOVES = true;
 
 constexpr float AXIS_X = 0.0;
 constexpr float AXIS_Y = 1.0;
 constexpr float AXIS_Z = 2.0;
 
 // Allow spectral energy ratio to make animation half as slow, or half as fast
-constexpr float ELAPSED_SCALE_MIN = 0.1;
-constexpr float ELAPSED_SCALE_MAX = 10.0;
+constexpr float ELAPSED_SCALE_MIN = 0.5;
+constexpr float ELAPSED_SCALE_MAX = 30.0;
 
 void cosc::CameraAnimationManager::update(float delta, float spectralEnergyRatio) {
     if (animations.empty()) {
