@@ -413,6 +413,8 @@ FragColor = vec4(inferno(angle), 1.0f);
 
 A good reference for how this directional lighting is @fig:skyboxscr.
 
+// TODO more lighting references (like more images)
+
 == Computing camera animations
 One of the goals I had in mind for the visualiser was automated and smooth camera animations, that would also
 be quick to describe in code. However, in order to achieve this, the camera class from the Graphics Minor
@@ -427,12 +429,15 @@ The new camera is based on a slightly modified version of the perspective camera
 LearnOpenGL camera, is that the new camera represents its pose as just a 3D vector and quaternion, rather than
 a set of vectors. This means that the pose of the camera can be described much more easily, and can also be
 interpolated to create animations. Other than that, it still outputs the same perspective and view matrices,
-has an FOV and uses a perspective projection.
+has an FOV and uses a perspective projection. Modifications to the upstream Cinder project camera include a
+small refactor, removal of unnecessary code for this project such as pick ray projection, and the addition of
+the freecam controller.
 
 To implement camera moves, I chose to represent any given move as a begin pose, end pose, and a duration. This
 is encoded in the `cosc::CameraAnimation` class. Then, in turn, a `cosc::CameraAnimationManager` is
 attached to the `cosc::Camera`, which enables it to animate the camera every frame.
 
+// TODO do we really wanna show all this code?
 ```cpp
 /// The pose of a camera, with its position and orientation.
 class CameraPose {
@@ -470,13 +475,19 @@ public:
 
 Every frame, the `cosc::CameraAnimationManager` takes the delta time of the last frame and a spectral
 energy ratio, to compute the camera animations. The spectral energy ratio is simply the current spectral
-energy divided by the max spectral energy across the whole song. This lets us animate effects to the
-_intensity_ of the song, which is covered in the next section.
+energy divided by the max spectral energy across the whole song (see @math:spectralEnergy). This lets us
+animate effects to the _intensity_ of the song, which is covered in the next section.
 
 The CameraAnimationManager stores which of the animations it's currently in, and handles the logic to
 transition to the next animation. When the end of the animation list is reached, it's simply wrapped around
 using modulo. The animation progress is tracked by keeping a sum of the delta values provided to the
-`update()` function, forming an `elapsed` value.
+`cosc::CameraAnimationManager::update()` function, forming an `elapsed` value.
+
+Using the aforementioned spectral energy ratio, the rate of change of the song is also increased during
+"intense" moments, and decreased during "relaxed moments". This is simply achieved by computing a multiplier
+to the delta time sent to the `cosc::CameraAnimationManager`, which currently ranges between 0.5x and 20x the
+normal speed. This particular feature was added after further observation of the original Monstercat
+visualiser, where this effect appears to be subtly applied to the background stars.
 
 Animating the 3D position of the camera between the begin and end pose turns out to be very easy, using simple
 linear interpolation, as follows:
@@ -486,7 +497,7 @@ auto pos = glm::mix(anim.begin.pos, anim.end.pos, progress); // performs linear 
 camera.setEyePoint(pos);
 ```
 
-The `progress` value ranges from 0.0 to 1.0 and is computed by `elapsed / anim.duration`. It was also
+The `progress` value ranges from 0.0 to 1.0 and is computed by `elapsed / anim.duration`. I also
 experimented using more complex interpolation (usually called "tweening" in the games industry), such as
 quadratic interpolation. Surprisingly, linear interpolation continued to look much better and was retained as
 the final interpolation method.
@@ -505,9 +516,55 @@ Unfortunately, Euler angles suffer from well-described problems such as ambiguit
 in this project.
 
 Instead, the system of quaternions are used. A quaternion is a 4D complex number system that can be used to
-encode 3D rotations, and has a direct correlation to rotation matrices (TODO citation).
+encode 3D rotations, and has a direct correlation to rotation matrices. Quaternion multiplication is the
+process used to rotate them. A quaternion is represented in the form:
 
-TODO
+$ q = a + b i + c j + d k $
+
+Where $a, b, c, d in bb(R)$ and $1, i, j, k$ are basis vectors. In particular, it is worth noting that
+quaternions are the most widely used system to reliably encode rotations in video games and other domains such
+as mobile robotics.
+
+Quaternions can be both converted to and from Euler angles. In freecam mode, to ensure consistency and
+stability, the camera class stores the pitch and yaw directly, meaning that the pitch and yaw are stored
+directly as the ground truth, rather than the quaternion. When the mouse is pushed upwards/downwards (Y axis
+in SDL), the pitch is changed. When the mouse is moved left/right (X axis in SDL), the yaw is changed. Roll is
+extremely undesirable for this application and is kept to a constant 0. In order to prevent rotation issues at
+the poles, pitch is clamped between -89 and +89 degrees.
+#footnote("Note that this is common behaviour in most first-person video games as well.")
+If the pitch angle were to reach 90 degrees, it was found to become extremely unstable.
+
+In the main animation mode, one of the most useful aspects of quaternions come in handy: spherical linear
+interpolation. Remember, our goal is to smoothly animate the transition between the start and end camera pose.
+It's not possible to directly apply simple linear interpolation to the quaternion $w x y z$ values directly,
+as was done with the $x y z$ camera position vector. Instead, the system of spherical linear interpolation
+("slerp") can be used to achieve a visually similar result. This system was first described by Ken Shoemake in
+1985 @Shoemake1985, and has since been used in almost every 3D video game since that time.
+
+Given two quaternions $q_1$ and $q_2$, and an interpolation parameter $u, {u in bb(R) | 0.0 < u < 1.0}$,
+spherical linear interpolation will find the shortest distance with constant angular velocity between them, as
+follows:
+
+// https://splines.readthedocs.io/en/latest/rotation/slerp.html
+$ text("Slerp")(q_1, q_2, u) = q_1(q_1^(-1) q_2)^u $
+
+In the visualiser, this is simply achieved by using glm's `glm::slerp` function, and since the special
+quaternion-based camera designed in @cinderCamera is used, it all magically "just works". In the end, the
+entire animation can be roughly condensed into the following (with `progress` being calculated as described
+above):
+
+```cpp
+// lerp position
+auto pos = glm::mix(anim.begin.pos, anim.end.pos, progress);
+// slerp angle
+auto orientation = glm::slerp(anim.begin.orientation, anim.end.orientation, progress);
+// update camera
+camera.setEyePoint(pos);
+camera.setOrientation(orientation);
+```
+
+This produces a really nice result, and goes to show the power of simple, effective and widely used
+interpolation techniques!
 
 == Camera shake
 In order to illustrate the intensity of the song at certain points, a camera shake effect was added to the
@@ -520,6 +577,7 @@ gradient noise technique designed by Ken Perlin, who also designed the seminal P
 types of gradient noise techniques are often used in video games for procedural terrain generation, e.g.
 Minecraft.
 
+// TODO flesh this about a bit more? elaborate on fBm?
 Raw Simplex noise on its own is not flexible enough to control the camera shake as desired, so I also sum it
 together using fractal Brownian motion (fBm), using the technique described in @simplexFbm. The C++
 implementation of both fBm and Simplex noise was provided by @simplexLibrary. To actually shake the camera,
@@ -602,9 +660,6 @@ The result is shown in @fig:chromatic:
     caption: [ Screenshot of visualisation application showing chromatic aberration effect ]
 ) <fig:chromatic>
 
-// We probably don't need this section if we include results inline
-// \section{Results}
-
 = Discussion
 Overall, the application was completed to a very functional standard and could be considered stable enough for
 real live presentations. However, as always with these sorts of projects, there's much that can be improved.
@@ -621,8 +676,9 @@ Here's a list of good targets for future improvement and research:
     animations depend on the song being played
 - More advanced and dynamic lighting for the bars
     - Including reflection mapping: Projecting the cubemap skybox onto the bars
+- Use the symmetry of the skybox more effectively, by having a reflective ground plane
+    - This would look like those photos taken of lakes at ground level with a "mirror" effect
 - Most post-processing effects, on the glitchy side of things
-- Dynamically render intro text based on song being played, using FreeType
 - Bloom post-effect
     - Requires HDR rendering pipeline (separate task)
 - Colour correction and tonemapping
@@ -631,6 +687,7 @@ Here's a list of good targets for future improvement and research:
 
 Additionally, here are some more zany ideas for long-term future improvement:
 
+- Dynamically render intro text based on song being played, using FreeType
 - Move to a fully online audio architecture all in C++, capture sound from loopback device using PipeWire
     - This would eliminate the need for offline audio processing entirely
 - Song lyrics displayed as 3D text that flies around
@@ -659,13 +716,14 @@ configured to display any song with audio available.
 #pagebreak()
 
 = Appendix A: Special thanks
-- *Angus* and *Henry*, for always listening to my nonsense inside and outside the COSC pracs.
-    Good to have beers with you guys - thanks for being real ones, and the best of luck in your own projects.
+- *Angus Scroggie* and *Henry Batt*, for always listening to my nonsense inside and outside the COSC pracs.
+    It was great to have beers (or apple cider, technically) with you guys - thanks for being real ones, and
+    the best of luck in your own projects! They are looking fantastic!
 - *Joey de Vries* of LearnOpenGL, for providing one of the best graphics programming resources.
 - *Laura Brehm*, *Mr FijiWiji*, *AGNO3* and *Animadrop*, for producing great music.
-- The authors and contributors of: SDL2, glad, glm, Cap'n Proto, dr_flac, stb_image, NumPy, SciPy,
+- *The authors and contributors* of: SDL2, glad, glm, Cap'n Proto, dr_flac, stb_image, NumPy, SciPy,
     spectrum.py, Simplex.h - such a project could not even be remotely achieved without the generous efforts of
-    these talented programmers.
+    these talented free software programmers.
 - *Paul Houx* of The Cinder Project, for the quaternion camera. The camera animations would not have been at
     all possible without this extremely polished perspective camera implementation.
 
@@ -674,5 +732,3 @@ This document was typeset using #link("https://github.com/typst/typst")[Typst].
 #pagebreak()
 
 #bibliography("major.bib", title: "References", style: "ieeemodified.csl")
-
-// TODO appendix for GitHub URL?

@@ -129,21 +129,46 @@ void addAnimations() {
         //     CameraPose(glm::vec3(16.4088, 0.9681, 10.5837), glm::quat(0.9584, -0.0264, 0.2839, 0.0078)),
         //     10.f
         // ),
-        CameraAnimation(
-            CameraPose(glm::vec3(7.3091, -16.7948, 16.1069), glm::quat(0.9257, 0.3782, -0.0047, 0.0019)),
-            CameraPose(glm::vec3(7.1402, 18.2470, 16.4410), glm::quat(0.9196, -0.3929, -0.0047, -0.0020)),
-            10.f
-        ),
-        CameraAnimation(
-            CameraPose(glm::vec3(6.7887, -0.4598, 16.6968), glm::quat(0.9985, 0.0544, 0.0014, -0.0001)),
-            CameraPose(glm::vec3(6.6380, -10.7140, 27.1954), glm::quat(0.9787, 0.2052, -0.0082, 0.0017)),
-            10.f
-        ),
-        CameraAnimation(
-            CameraPose(glm::vec3(9.0587, -31.1216, 66.6940), glm::quat(0.9826, 0.1846, 0.0220, -0.0041)),
-            CameraPose(glm::vec3(-4.8753, 15.8279, 15.4221), glm::quat(0.8993, -0.3416, -0.2552, -0.0969)),
-            7.f
-        )
+        // CameraAnimation(
+        //     CameraPose(glm::vec3(7.3091, -16.7948, 16.1069), glm::quat(0.9257, 0.3782, -0.0047, 0.0019)),
+        //     CameraPose(glm::vec3(7.1402, 18.2470, 16.4410), glm::quat(0.9196, -0.3929, -0.0047, -0.0020)),
+        //     10.f
+        // ),
+        // CameraAnimation(
+        //     CameraPose(glm::vec3(6.7887, -0.4598, 16.6968), glm::quat(0.9985, 0.0544, 0.0014, -0.0001)),
+        //     CameraPose(glm::vec3(6.6380, -10.7140, 27.1954), glm::quat(0.9787, 0.2052, -0.0082, 0.0017)),
+        //     10.f
+        // ),
+        // CameraAnimation(
+        //     CameraPose(glm::vec3(9.0587, -31.1216, 66.6940), glm::quat(0.9826, 0.1846, 0.0220, -0.0041)),
+        //     CameraPose(glm::vec3(-4.8753, 15.8279, 15.4221), glm::quat(0.8993, -0.3416, -0.2552, -0.0969)),
+        //     7.f
+        // ),
+        // CameraAnimation(
+        //     CameraPose(glm::vec3(-11.2568, 6.9624, 17.9376), glm::quat(0.9579, -0.0751, -0.2761, -0.0216)),
+        //     CameraPose(glm::vec3(26.7959, 6.9624, 13.3181), glm::quat(0.9074, -0.0902, 0.4085, 0.0406)),
+        //     10.f
+        // ),
+        // CameraAnimation(
+        //     CameraPose(glm::vec3(26.7959, 6.9624, 13.3181), glm::quat(0.9074, -0.0902, 0.4085, 0.0406)),
+        //     CameraPose(glm::vec3(25.9448, 6.9624, -14.6998), glm::quat(0.3426, -0.0220, 0.9373, 0.0603)),
+        //     10.f
+        // ),
+        // CameraAnimation(
+        //     CameraPose(glm::vec3(25.9448, 6.9624, -14.6998), glm::quat(0.3426, -0.0220, 0.9373, 0.0603)),
+        //     CameraPose(glm::vec3(-9.9373, 6.9624, -15.1438), glm::quat(-0.3448, 0.0280, 0.9352, 0.0759)),
+        //     10.f
+        // ),
+        // CameraAnimation(
+        //     CameraPose(glm::vec3(-9.9373, 6.9624, -15.1438), glm::quat(-0.3448, 0.0280, 0.9352, 0.0759)),
+        //     CameraPose(glm::vec3(-12.9327, -12.1777, -10.1163), glm::quat(-0.4677, -0.1391, 0.8367, -0.2488)),
+        //     5.f
+        // ),
+        // CameraAnimation(
+        //     CameraPose(glm::vec3(-12.9327, -12.1777, -10.1163), glm::quat(-0.4677, -0.1391, 0.8367, -0.2488)),
+        //     CameraPose(glm::vec3(-8.8096, -5.5783, 18.5012), glm::quat(-0.9448, -0.1127, 0.3055, -0.0364)),
+        //     10.f
+        // ),
     });
     // clang-format on
     // NOLINTEND
