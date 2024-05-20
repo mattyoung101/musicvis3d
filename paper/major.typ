@@ -353,7 +353,7 @@ audio driver's selection of what it believes is the best format. In the code, we
 sampling rate using `SDL_AudioSpec`, but allow SDL to change the actual underlying datatype if it desires. For
 example, while dr_flac uses signed 32-bit ints, SDL may prefer to resample to floats on some audio drivers.
 
-== Transforming and rendering bars
+== Transforming, rendering and lighting bars
 Each frame, we query the `cosc::SongData` to figure out which spectrum block we are currently playing, and use
 that to query the heights of all the bars from the decoded Cap'n Proto document. The heights are a `uint8_t`,
 so range from 0 to 255 inclusive. These are remapped to a float based on a configurable minimum and maximum
@@ -411,7 +411,18 @@ The final composite is very simple: the fragment colour is just set to the RGB v
 FragColor = vec4(inferno(angle), 1.0f);
 ```
 
-A good reference for how this directional lighting is @fig:skyboxscr.
+The images in @fig:lighting1 and @fig:lighting2 show the Phong shading. Notice the "hotspot" visible on the
+central bar in @fig:lighting2, which is a classic artefact of Phong shading methods.
+
+#figure(
+    image("img/lighting_full.jpg", width: 65%),
+    caption: [ First image demonstrating Phong shading ]
+) <fig:lighting1>
+
+#figure(
+    image("img/lighting2_full.jpg", width: 65%),
+    caption: [ Second image demonstrating Phong shading ]
+) <fig:lighting2>
 
 // TODO more lighting references (like more images)
 
@@ -659,6 +670,14 @@ The result is shown in @fig:chromatic:
     image("img/chromatic.png", width: 75%),
     caption: [ Screenshot of visualisation application showing chromatic aberration effect ]
 ) <fig:chromatic>
+
+@fig:chromatic_closeup also shows a close-up picture of the chromatic aberration effect. Notice the separation
+of the individual colour channels.
+
+#figure(
+    image("img/chromatic_closeup.png", width: 60%),
+    caption: [ Close-up of chromatic aberration effect ]
+) <fig:chromatic_closeup>
 
 = Discussion
 Overall, the application was completed to a very functional standard and could be considered stable enough for
