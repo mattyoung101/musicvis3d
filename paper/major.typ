@@ -541,7 +541,7 @@ as was done with the $x y z$ camera position vector. Instead, the system of sphe
 ("slerp") can be used to achieve a visually similar result. This system was first described by Ken Shoemake in
 1985 @Shoemake1985, and has since been used in almost every 3D video game since that time.
 
-Given two quaternions $q_1$ and $q_2$, and an interpolation parameter $u, {u in bb(R) | 0.0 < u < 1.0}$,
+Given two quaternions $q_1$ and $q_2$, and an interpolation parameter $u, {u in bb(R) | 0.0 <= u <= 1.0}$,
 spherical linear interpolation will find the shortest distance with constant angular velocity between them, as
 follows:
 
@@ -575,7 +575,8 @@ other words, semi-randomly rotating the camera each tick). It turns out that _ac
 very natural, so instead, Simplex noise @simplexNoise is applied. Simplex noise is a very popular procedural
 gradient noise technique designed by Ken Perlin, who also designed the seminal Perlin noise technique. These
 types of gradient noise techniques are often used in video games for procedural terrain generation, e.g.
-Minecraft.
+Minecraft. Compared to Perlin noise, Simplex noise has the advantage of lower computational cost and better
+visual results.
 
 // TODO flesh this about a bit more? elaborate on fBm?
 Raw Simplex noise on its own is not flexible enough to control the camera shake as desired, so I also sum it
