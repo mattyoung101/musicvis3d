@@ -402,8 +402,9 @@ these two vectors by taking the dot product, and clamping it to be above 0.0 usi
 
 Now that we have a single float describing the angle between the camera and the model, we need to transform
 that into an RGB value for coloured shading. This can be achieved using a colour map, in this case, "Inferno"
-from Matplotlib. I used a polynomial approximation from @infernoGLSL, instead of the usual 256-element lookup
-table, which works better for fragment shaders.
+from Matplotlib. I also tried the rainbow colourmap "Turbo", but Inferno works the best for this application
+because it shows the angle in a intuitive and visually appealing manner. I used a polynomial approximation
+from @infernoGLSL, instead of the usual 256-element lookup table, which works better for fragment shaders.
 
 The final composite is very simple: the fragment colour is just set to the RGB value that Inferno returned:
 
@@ -684,6 +685,8 @@ of the individual colour channels.
 Overall, the application was completed to a very functional standard and could be considered stable enough for
 real live presentations. However, as always with these sorts of projects, there's much that can be improved.
 
+TODO talk about anti-aliasing
+
 Here's a list of good targets for future improvement and research:
 
 - Refactoring the render pipeline, especially `main.cpp`, to have a `Renderer` interface with `IntroRenderer`
@@ -723,7 +726,9 @@ for, and I was able to achieve everything I set out to, and I was even able to c
 tasks I set myself. This was all made possible because I started extremely early (just after the Graphics
 Minor Project was finished), and worked on the project all basically all semester.
 
-TODO
+TODO: talk about like how we combined a bunch of different techniques to create a good result
+
+TODO if you did anything you're proud of, that shows a high level of achievement, talk about it in here. (so basically gas meself up)
 
 = Conclusion
 In this paper, I present a 3D music visualisation application using OpenGL and the Discrete Fourier
@@ -739,6 +744,7 @@ configured to display any song with audio available.
 - *Angus Scroggie* and *Henry Batt*, for always listening to my nonsense inside and outside the COSC pracs.
     It was great to have beers (or apple cider, technically) with you guys - thanks for being real ones, and
     the best of luck in your own projects! They are looking fantastic!
+- *Sarah Hurley* for being the greatest cinema genius of the 21st century. Thank you for helping me film :)
 - *Joey de Vries* of LearnOpenGL, for providing one of the best graphics programming resources.
 - *Laura Brehm*, *Mr FijiWiji*, *AGNO3* and *Animadrop*, for producing great music.
 - *The authors and contributors* of: SDL2, glad, glm, Cap'n Proto, dr_flac, stb_image, NumPy, SciPy,
