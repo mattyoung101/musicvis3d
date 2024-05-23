@@ -195,7 +195,8 @@ magnitude of that particular frequency. A diagram of this transform is shown in 
 
 #figure(
     image("img/fouriertransform.png", width: 50%),
-    caption: [  Diagram showing the time-domain to frequency-domain conversion of the Fourier transform ]
+    caption: [  Diagram showing the time-domain to frequency-domain conversion of the Fourier transform
+    @fourierImage ]
 ) <fig:ftdiagram>
 
 From the Fourier transform comes the concept of the Discrete Fourier Transform (DFT). The equation for the DFT
@@ -520,7 +521,7 @@ rotations as a 3D vector of angles around axes: pitch, roll and yaw (@fig:euler)
 
 #figure(
     image("img/euler.png", width: 65%),
-    caption: [ Demonstration of Euler angle rotation system ]
+    caption: [ Demonstration of Euler angle rotation system @eulerDiagram ]
 ) <fig:euler>
 
 Unfortunately, Euler angles suffer from well-described problems such as ambiguity and gimbal lock
@@ -603,7 +604,7 @@ respectively.
 
 #figure(
     image("img/simplexfbm.png", width: 80%),
-    caption: [ 2D Simplex noise with fractal Brownian motion ]
+    caption: [ 2D Simplex noise with fractal Brownian motion @simplexFbm ]
 ) <fig:fbm>
 
 The magnitude of the shake is based on the spectral energy ratio, as defined in @math:spectralEnergy. That
@@ -619,7 +620,7 @@ in @tyroSpace, which uses procedural techniques, coincidentally also using GLSL 
 
 #figure(
     image("img/cubemap.png", width: 55%),
-    caption: [ Demonstration of an OpenGL cubemap ]
+    caption: [ Demonstration of an OpenGL cubemap @cubemapDiagram ]
 ) <fig:cubemap>
 
 Based on a technique described in LearnOpenGL, the cubemap is able to be drawn last in the scene as an
@@ -681,14 +682,57 @@ of the individual colour channels.
     caption: [ Close-up of chromatic aberration effect ]
 ) <fig:chromatic_closeup>
 
+In the above figures, you will notice that the chromatic aberration effect is applied to the whole screen,
+including the background skybox. This could be avoided if desired by rendering the bars to a separate
+framebuffer and compositing the result together. However, I was inspired by the album art to the song
+"Saturn's Air" by Animadrop (which was, at one point, going to be used in the visualiser
+#footnote("It was removed due to not looking very interesting on the spectrum.")) to make the
+chromatic aberration effect fullscreen. The album art is reproduced in @fig:animadrop. It also served as an
+inspiration for the space skybox.
+
+#figure(
+    image("img/animadrop_saturnsair.jpg", width: 35%),
+    caption: [ Album art for _Saturn's Air_ by Animadrop, inspiration for fullscreen chromatic aberration ]
+) <fig:animadrop>
+
 = Discussion
 Overall, the application was completed to a very functional standard and could be considered stable enough for
-real live presentations. However, as always with these sorts of projects, there's much that can be improved.
+real live presentations.
 
-TODO talk about anti-aliasing
+One problem that I encountered was with anti-aliasing. In the application configuration section, I configure
+SDL2 to use multi-sample anti-aliasing (MSAA) with 4x samples. Unfortunately, as can be seen in
+@fig:chromatic_closeup, the anti-aliasing didn't end up working correctly. In the time given, I wasn't able to
+figure out what exactly is causing this discrepancy. I originally thought it was an issue with Wayland, but
+the issue also occurs under XWayland. Instead, I believe the issue is that, while the _screen target_ is
+configured to use MSAA, the off-screen framebuffer has not been configured to use MSAA.
 
-Here's a list of good targets for future improvement and research:
+One other issue I noticed was that, although any songs will _work_ on the visualiser, not all songs look
+_good_ on the visualiser. This particularly seems to be related to how the spectral energy ratio is
+distributed across the length of the song, which in turn depends on how the song is mixed and also how the
+bassline is written. Songs with rolling, constant bass and songs that are mixed with low dynamic range (i.e.
+highly compressed) will be regarded by the visualiser as being "intense" for their whole duration, even if
+they don't _sound_ intense to our human ears. This means that the camera will shake, move quickly, and
+chromatic aberration will be present throughout the entire song. Instead, songs with short, "blippy" basslines
+seem to work the best. 
 
+@fig:lauraspectral shows the spectral energy ratio for the song _Pure Sunlight_ by Laura Brehm, AGNO3 and
+MrFijiWiji, which was the main showcase song for the visualiser. The X axis is block index and the Y axis is
+spectral energy ratio at that instant. This graph shows that _Pure Sunlight_ works really well because it has
+a varied, "blippy" spectral energy ratio, with a slow intro section and more intense second section.
+
+#figure(
+    image("img/puresunlight_spectral.svg", width: 70%),
+    caption: [ Spectral energy ratio graph of _Pure Sunlight_ by Laura Brehm, AGNO3 and MrFijiWiji. ]
+) <fig:lauraspectral>
+
+As always with these sorts of projects, there's much that can be improved. Here's a list of good targets for
+future improvement and research:
+
+- Performing DC offset removal in spectral processing on the Python side
+    - DC offsets can significantly bias the spectrogram for certain inputs
+- Mel sampling in spectral processing
+    - Currently, the sampling is linear which may not be accurate to human hearing
+    - Mel sampling (hence the "Mel spectrogram") resembles human musical hearing much more closely
 - Refactoring the render pipeline, especially `main.cpp`, to have a `Renderer` interface with `IntroRenderer`
     and `MainRenderer` sub-classes; plus a proper state machine to switch between them
 - Make "state" less ugly - we would like to avoid having as many globals as we currently have
@@ -707,8 +751,10 @@ Here's a list of good targets for future improvement and research:
 - Colour correction and tonemapping
     - Also requires HDR rendering pipeline
     - Tonemapping can be done for example using the ACES curve @acesTone
+- Animate camera using splines rather than two linear interpolation points
+    - Would allow for smoother trajectories with multiple points in them
 
-Additionally, here are some more zany ideas for long-term future improvement:
+Additionally, here are some more advanced ideas for long-term future improvement:
 
 - Dynamically render intro text based on song being played, using FreeType
 - Move to a fully online audio architecture all in C++, capture sound from loopback device using PipeWire
@@ -722,13 +768,20 @@ Additionally, here are some more zany ideas for long-term future improvement:
 
 = Self-assessment
 I'm really proud of the work I achieved for this project. The visualiser turned out better than I was hoping
-for, and I was able to achieve everything I set out to, and I was even able to complete a lot of the extension
+for. I was able to achieve everything I set out to, and I was even able to complete a lot of the extension
 tasks I set myself. This was all made possible because I started extremely early (just after the Graphics
-Minor Project was finished), and worked on the project all basically all semester.
+Minor Project was finished), and worked on the project all basically all semester. The visualiser is stable,
+and I was able to try it with a wide variety of inputs - some songs work better than others - but all songs
+were fully functional. The code is relatively clean and performant, which I'm happy about.
 
-TODO: talk about like how we combined a bunch of different techniques to create a good result
+I was able to draw from a wide variety of advanced topics to construct this visualisation, including from
+digital signal processing, linear algebra in regards to quaternions and vectors, statistics for fractal
+Brownian motion, and finally general computer graphics for Simplex noise and chromatic aberration
+post-processing. By drawing from these topics, I always able to learn a huge amount of cross-discipline
+knowledge that I couldn't have gotten otherwise.
 
-TODO if you did anything you're proud of, that shows a high level of achievement, talk about it in here. (so basically gas meself up)
+I don't think this will be the final music visualiser I ever make, but nonetheless, I'm
+really happy with the result I achieved.
 
 = Conclusion
 In this paper, I present a 3D music visualisation application using OpenGL and the Discrete Fourier
@@ -746,7 +799,7 @@ configured to display any song with audio available.
     the best of luck in your own projects! They are looking fantastic!
 - *Sarah Hurley* for being the greatest cinema genius of the 21st century. Thank you for helping me film :)
 - *Joey de Vries* of LearnOpenGL, for providing one of the best graphics programming resources.
-- *Laura Brehm*, *Mr FijiWiji*, *AGNO3* and *Animadrop*, for producing great music.
+- *Laura Brehm*, *Mr FijiWiji*, *AGNO3*, *Eastern Odyssey* and *Animadrop*, for producing great music.
 - *The authors and contributors* of: SDL2, glad, glm, Cap'n Proto, dr_flac, stb_image, NumPy, SciPy,
     spectrum.py, Simplex.h - such a project could not even be remotely achieved without the generous efforts of
     these talented free software programmers.
