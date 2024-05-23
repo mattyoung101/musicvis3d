@@ -72,20 +72,20 @@ of ways to interpret an audio signal, music visualisation is an eclectic mix of 
 makes it a very interesting field to research. Additionally, with its presence in live entertainment, the
 right music visualiser can really draw audiences in to the music, and create very memorable experiences.
 
-One of the first groups to pioneer the use of real-time computer graphics to visualise music was the
-_demoscene_. The demoscene originated from a group of talented programmers who produced _warez_ - cracked
-video games and programs. Each _warez_ group would prepend an _intro_ to their cracked game to show off their
-skills. Over time, certain groups came to focus on just producing these intros, rather than cracking games.
-This pivotal moved enabled programmers working on formerly illegal cracking tools to instead focus on legal
-computer graphics programming. Many demoscene intros pushed forward the state of the art, and demoscene
-programmers are consistently regarded as some of the most talented in the computer graphics industry. Almost
-all demoscene productions feature background music (often synthesised in real-time by the program!) and a
-suite of advanced computer graphics, which are usually synced to the audio. Some of these demoscene
-productions served as a great inspiration to me in selecting this project.
+// One of the first groups to pioneer the use of real-time computer graphics to visualise music was the
+// _demoscene_. The demoscene originated from a group of talented programmers who produced _warez_ - cracked
+// video games and programs. Each _warez_ group would prepend an _intro_ to their cracked game to show off their
+// skills. Over time, certain groups came to focus on just producing these intros, rather than cracking games.
+// This pivotal moved enabled programmers working on formerly illegal cracking tools to instead focus on legal
+// computer graphics programming. Many demoscene intros pushed forward the state of the art, and demoscene
+// programmers are consistently regarded as some of the most talented in the computer graphics industry. Almost
+// all demoscene productions feature background music (often synthesised in real-time by the program!) and a
+// suite of advanced computer graphics, which are usually synced to the audio. Some of these demoscene
+// productions served as a great inspiration to me in selecting this project.
 
 The particular music visualiser I aim to construct is an improved version of the "spectrum of bars" once used
-by Canadian record label Monstercat, shown in @fig:monstercat.
-The label has since transitioned away from this computational music visualiser, and instead use custom music videos.
+by Canadian record label Monstercat, shown in @fig:monstercat. The label has since transitioned away from this
+computational music visualiser, and instead use custom music videos.
 
 #figure(
     image("img/monstercat.png", width: 80%),
@@ -97,12 +97,21 @@ shows the magnitudes of the varying frequencies that make up the song. This spec
 in a number of ways, for example, the MilkDrop @milkdrop software includes visualisations that encode this in
 a number of complex ways. However, for our use case, bars are visually appealing and an intuitive approach to
 visualising the music - an almost direct presentation of the data, but still with captivating enough visuals.
+Compared to a more advanced single-song visualiser (e.g. a demoscene production), the "spectrum of bars" has
+the advantage of producing reasonable output for _any_ given input song. Although, whether such output is
+_visually appealing_ for every song is another question.
 
-Compared to demoscene productions, which design cutting-edge procedural computer graphics from scratch to
-target one song in particular (often composed by the scene group themselves), this "spectrum of bars" type of
-visualiser is more generic in that it will produce reasonable output for _any_ song (although whether said
-output looks visually appealing or not is another question). It's also easier to construct from scratch
-without an engine, which is the goal of this project.
+The features from the 2D spectrum in @fig:monstercat that I'd like to preserve include the rough number of
+bars, the space theme, and the movement of the background based on the intensity of the song. New features I
+plan to add include making it 3D, having a dynamic orbiting camera that flies around in 3D, as well as some
+more "video-game" style effects such as post-processing and screen shake to demonstrate the intensity of the
+song at certain points.
+
+// Compared to demoscene productions, which design cutting-edge procedural computer graphics from scratch to
+// target one song in particular (often composed by the scene group themselves), this "spectrum of bars" type of
+// visualiser is more generic in that it will produce reasonable output for _any_ song (although whether said
+// output looks visually appealing or not is another question). It's also easier to construct from scratch
+// without an engine, which is the goal of this project.
 
 = Architecture overview
 == Overall description of sub-applications
@@ -446,8 +455,6 @@ central bar in @fig:lighting2, which is a classic artefact of Phong shading meth
     caption: [ Second image demonstrating Phong shading ]
 ) <fig:lighting2>
 
-// TODO more lighting references (like more images)
-
 == Computing camera animations
 One of the goals I had in mind for the visualiser was automated and smooth camera animations, that would also
 be quick to describe in code. However, in order to achieve this, the camera class from the Graphics Minor
@@ -606,14 +613,49 @@ In order to illustrate the intensity of the song at certain points, a camera sha
 Camera shake is essentially applying pseudorandom perturbations to the camera's orientation quaternion (in
 other words, semi-randomly rotating the camera each tick). It turns out that _actual_ randomness does not look
 very natural, so instead, Simplex noise @simplexNoise is applied. Simplex noise is a very popular procedural
-gradient noise technique designed by Ken Perlin, who also designed the seminal Perlin noise technique. These
-types of gradient noise techniques are often used in video games for procedural terrain generation, e.g.
+gradient noise technique designed by Ken Perlin, who also designed the seminal Perlin noise technique. Whereas
+pseudorandom number generators (PSRNGs) aim to generate a high-quality sequence of random numbers based on an 
+initial seed, gradient noise techniques instead aim to generate visually appealing, smoother, more natural
+"randomness" with less focus on statistical quality. Simplex and Perlin noise achieve this essentially through
+creating a lattice of random gradients, computing the dot product of those gradients, and then interpolating
+them. This is shown in @fig:perlin for Perlin noise, Simplex noise is very similar.
+
+#figure(
+    image("img/PerlinNoiseInterpolated.svg", width: 60%),
+    caption: [ Interpolated lattice to construct Perlin noise @perlinDiagram ]
+) <fig:perlin>
+
+These types of gradient noise techniques are often used in video games for procedural terrain generation, e.g.
 Minecraft. Compared to Perlin noise, Simplex noise has the advantage of lower computational cost and better
 visual results.
 
-// TODO flesh this about a bit more? elaborate on fBm?
 Raw Simplex noise on its own is not flexible enough to control the camera shake as desired, so I also sum it
-together using fractal Brownian motion (fBm), using the technique described in @simplexFbm. The C++
+together using fractal Brownian motion (fBm), using the technique described in @simplexFbm. Fractal Brownian
+motion, in the computer graphics sense, involves adding different iterations of noise ("octaves"), with
+successively incrementing frequencies ("lacunarity") and decreasing amplitude ("gain"), to produce a finer
+grained noise pattern with more intricate details.
+
+The fBm technique can be described by the following pseudocode @fbmShaders:
+
+```cpp
+// Properties
+const int octaves = 1;
+float lacunarity = 2.0;
+float gain = 0.5;
+
+// Initial values
+float amplitude = 0.5;
+float frequency = 1.;
+
+// Loop of octaves
+for (int i = 0; i < octaves; i++) {
+	y += amplitude * noise(frequency*x);
+	frequency *= lacunarity;
+	amplitude *= gain;
+}
+```
+
+The C++
 implementation of both fBm and Simplex noise was provided by @simplexLibrary. To actually shake the camera,
 I generate a noise value for each Euler axis, and apply it every frame.
 
@@ -733,7 +775,7 @@ bassline is written. Songs with rolling, constant bass and songs that are mixed 
 highly compressed) will be regarded by the visualiser as being "intense" for their whole duration, even if
 they don't _sound_ intense to our human ears. This means that the camera will shake, move quickly, and
 chromatic aberration will be present throughout the entire song. Instead, songs with short, "blippy" basslines
-seem to work the best. 
+seem to work the best.
 
 @fig:lauraspectral shows the spectral energy ratio for the song _Pure Sunlight_ by Laura Brehm, AGNO3 and
 MrFijiWiji, which was the main showcase song for the visualiser. The X axis is block index and the Y axis is
