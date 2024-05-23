@@ -66,8 +66,22 @@
 A _music visualiser_ is a computer program that takes as input an audio signal, typically music, and
 produces as output a graphical visualisation. Technically, this can be an entirely offline process, but most
 often music visualisers run in real-time. Music visualisers have an important role in the live entertainment
-scene @mccarthy2022live, particularly for Electronic Dance Music (EDM). With an almost infinite number
-of ways to interpret an audio signal, music visualisation is an eclectic mix of art and engineering.
+scene @mccarthy2022live, particularly for Electronic Dance Music (EDM). In fact, music visualisers have a long
+and storied history in both the EDM scene and hacker culture in general. With an almost infinite number
+of ways to interpret an audio signal, music visualisation is an eclectic mix of art and engineering, which
+makes it a very interesting field to research. Additionally, with its presence in live entertainment, the
+right music visualiser can really draw audiences in to the music, and create very memorable experiences.
+
+One of the first groups to pioneer the use of real-time computer graphics to visualise music was the
+_demoscene_. The demoscene originated from a group of talented programmers who produced _warez_ - cracked
+video games and programs. Each _warez_ group would prepend an _intro_ to their cracked game to show off their
+skills. Over time, certain groups came to focus on just producing these intros, rather than cracking games.
+This pivotal moved enabled programmers working on formerly illegal cracking tools to instead focus on legal
+computer graphics programming. Many demoscene intros pushed forward the state of the art, and demoscene
+programmers are consistently regarded as some of the most talented in the computer graphics industry. Almost
+all demoscene productions feature background music (often synthesised in real-time by the program!) and a
+suite of advanced computer graphics, which are usually synced to the audio. Some of these demoscene
+productions served as a great inspiration to me in selecting this project.
 
 The particular music visualiser I aim to construct is an improved version of the "spectrum of bars" once used
 by Canadian record label Monstercat, shown in @fig:monstercat.
@@ -82,7 +96,13 @@ The visualisation in @fig:monstercat is a common type of visualisation that visu
 shows the magnitudes of the varying frequencies that make up the song. This spectral data can be interpreted
 in a number of ways, for example, the MilkDrop @milkdrop software includes visualisations that encode this in
 a number of complex ways. However, for our use case, bars are visually appealing and an intuitive approach to
-visualising the music.
+visualising the music - an almost direct presentation of the data, but still with captivating enough visuals.
+
+Compared to demoscene productions, which design cutting-edge procedural computer graphics from scratch to
+target one song in particular (often composed by the scene group themselves), this "spectrum of bars" type of
+visualiser is more generic in that it will produce reasonable output for _any_ song (although whether said
+output looks visually appealing or not is another question). It's also easier to construct from scratch
+without an engine, which is the goal of this project.
 
 = Architecture overview
 == Overall description of sub-applications
