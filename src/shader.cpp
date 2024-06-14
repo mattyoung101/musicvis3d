@@ -1,3 +1,5 @@
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
 #include "cosc/shader.hpp"
 #include "cosc/util.hpp"
 #include "glad/gl.h"

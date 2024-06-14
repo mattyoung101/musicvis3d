@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright 2024 Matt Young.
+# SPDX-License-Identifier: ISC
+
 import sys
 from pathlib import Path
 import capnp

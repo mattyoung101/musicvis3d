@@ -1,3 +1,5 @@
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
 #include "cosc/animation.hpp"
 #include "cosc/camera.hpp"
 #include "cosc/cubemap.hpp"

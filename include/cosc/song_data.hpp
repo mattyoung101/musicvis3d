@@ -1,3 +1,5 @@
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
 #pragma once
 #include "cosc/lib/dr_flac.h"
 #include "cosc/util.hpp" // this is used, but clang-tidy cannot detect it correctly

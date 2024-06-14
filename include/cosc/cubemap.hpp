@@ -1,3 +1,5 @@
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
 #pragma once
 #include "cosc/camera.hpp"
 #include "cosc/shader.hpp"

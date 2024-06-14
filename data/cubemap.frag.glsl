@@ -1,4 +1,7 @@
 #version 330 core
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
+
 out vec4 FragColor;
 
 in vec3 TexCoords;

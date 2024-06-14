@@ -1,3 +1,5 @@
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
 #include "cosc/song_data.hpp"
 #include "cosc/lib/dr_flac.h"
 #include "cosc/util.hpp"

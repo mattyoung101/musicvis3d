@@ -1,4 +1,6 @@
 #version 330 core
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
 
 in vec3 FragPos; // fragment vertex position in world space
 in vec3 Normal; // vertex normal vector from vertex shader

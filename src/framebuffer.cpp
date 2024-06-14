@@ -1,3 +1,5 @@
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
 #include "cosc/framebuffer.hpp"
 #include "glad/gl.h"
 #include <spdlog/spdlog.h>

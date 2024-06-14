@@ -1,3 +1,5 @@
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
 #pragma once
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>

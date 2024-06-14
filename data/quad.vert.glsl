@@ -1,4 +1,7 @@
 #version 330 core
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
+
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec2 aTexCoords;
 

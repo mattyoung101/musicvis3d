@@ -1,3 +1,5 @@
+// Copyright 2024 Matt Young.
+// SPDX-License-Identifier: ISC
 #pragma once
 #include "cosc/util.hpp" // this is used, but clang-tidy cannot detect it correctly
 #include <glm/mat4x4.hpp>

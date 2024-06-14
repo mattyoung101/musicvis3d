@@ -1,4 +1,20 @@
 #!/usr/bin/env python3
+# Copyright 2024 Matt Young.
+# SPDX-License-Identifier: ISC
+
+# This script is used to process music data in the FLAC file format, compute the spectrogram, and serialise
+# it to Cap'n Proto for the C++ side.
+# It computes a periodogram using the Fast Fourier Transform (FFT) (using the Kaiser windowing function),
+# converts it into decibels, then samples the frequency spectrum logarithmically to generate the bars.
+
+# References:
+# - https://realpython.com/python-scipy-fft/
+# - https://stackoverflow.com/a/67294512/5007892
+# - https://spatialthoughts.com/2022/01/14/animated-plots-with-matplotlib/
+# - https://www.youtube.com/watch?v=aQKX3mrDFoY
+# - https://pyspectrum.readthedocs.io/en/latest/quickstart.html
+# - https://stackoverflow.com/a/28181897/5007892
+
 import sys
 from pathlib import Path
 import audiofile
@@ -10,22 +26,6 @@ from spectrum import tools as stools
 import capnp
 from typing import List, Tuple
 from tqdm import tqdm
-import scipy
-
-# This script is used to process music data in the FLAC file format, compute the spectrogram, and serialise 
-# it to Cap'n Proto for the C++ side.
-# It computes a periodogram using the Fast Fourier Transform (FFT) (using the Kaiser windowing function), 
-# converts it into decibels, then samples the frequency spectrum logarithmically to generate the bars.
-
-# Matt Young, 2024
-
-# References:
-# - https://realpython.com/python-scipy-fft/
-# - https://stackoverflow.com/a/67294512/5007892
-# - https://spatialthoughts.com/2022/01/14/animated-plots-with-matplotlib/
-# - https://www.youtube.com/watch?v=aQKX3mrDFoY
-# - https://pyspectrum.readthedocs.io/en/latest/quickstart.html
-# - https://stackoverflow.com/a/28181897/5007892
 
 # Number of samples that constitutes one spectrum block
 BLOCK_SIZE = 1024
