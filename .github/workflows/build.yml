@@ -31,7 +31,7 @@ jobs:
           cache_packages: true
 
       - name: Setup Conan profile
-        uses: conan profile detect --force
+        run: conan profile detect --force
 
       - name: Install deps
         run: sudo apt update;
