@@ -7,11 +7,17 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-22.04
+    env:
+      CC: clang-20
+      CXX: clang++-20
     steps:
       - uses: actions/checkout@v5
 
       - name: Install Clang
-        run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+        run: cd /tmp;
+          wget https://apt.llvm.org/llvm.sh;
+          chmod +x llvm.sh;
+          sudo ./llvm.sh 20
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -23,6 +29,9 @@ jobs:
         uses: conan-io/setup-conan@v1
         with:
           cache_packages: true
+
+      - name: Setup Conan profile
+        uses: conan profile detect --force
 
       - name: Install deps
         run: sudo apt update;
