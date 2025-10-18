@@ -11,7 +11,7 @@ jobs:
       CMAKE_CXX_COMPILER_LAUNCHER: ccache
       CMAKE_C_COMPILER_LAUNCHER: ccache
       CC: clang-20
-      CXX: clang++20
+      CXX: clang++-20
     steps:
       - uses: actions/checkout@v5
 
