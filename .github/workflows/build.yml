@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            conan cache restore conan_cache_save.tgz
+            conan_cache_save.tgz
           key: ${{ runner.os }}-conan-cache
 
       - name: Setup Conan profile
