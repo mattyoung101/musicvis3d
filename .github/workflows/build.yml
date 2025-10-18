@@ -46,6 +46,10 @@ jobs:
             conan_cache_save.tgz
           key: ${{ runner.os }}-conan-cache
 
+      - name: Perform Conan restore
+        run: conan cache restore conan_cache_save.tgz
+        continue-on-error: true # when it hasn't been found
+
       - name: Setup Conan profile
         run: conan profile detect --force
 
