@@ -33,6 +33,10 @@ jobs:
       - name: Setup Conan profile
         run: conan profile detect --force
 
+      - name: Install deps
+        run: sudo apt update;
+          sudo apt install --yes libegl-dev libegl1-mesa-dev libudev-dev
+
       - name: Build
         run: just build
 
