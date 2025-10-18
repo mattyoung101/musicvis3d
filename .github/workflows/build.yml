@@ -1,0 +1,36 @@
+name: "Build"
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Clang
+        run: bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          create-symlink: true
+
+      - name: Install Just
+        uses: extractions/setup-just@v3
+
+      - name: Install Conan
+        uses: conan-io/setup-conan@v1
+        with:
+          cache_packages: true
+
+      - name: Build
+        run: just build
+
+      - name: Archive artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: musicvis3d
+          path: build/musicvis
