@@ -6,14 +6,6 @@ set(CMAKE_CXX_STANDARD 20) # C++20
 Set(FETCHCONTENT_QUIET FALSE)
 include(FetchContent)
 
-# spdlog
-FetchContent_Declare(
-        spdlog
-        GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG        v1.15.0
-)
-FetchContent_MakeAvailable(spdlog)
-
 # cap'n proto
 # based on https://github.com/capnproto/capnproto/blob/v2/c%2B%2B/samples/CMakeLists.txt
 find_package(CapnProto CONFIG REQUIRED)
@@ -44,7 +36,7 @@ message(STATUS "Music vis headers: ${musicVisProtoHeaders}")
 # SDL2
 find_package(SDL2 REQUIRED)
 target_include_directories(musicvis PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(musicvis ${SDL2_LIBRARIES})
+target_link_libraries(musicvis SDL2::SDL2-static)
 
 # spdlog
 find_package(spdlog REQUIRED)

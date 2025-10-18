@@ -1,0 +1,11 @@
+[requires]
+spdlog/1.16.0
+fmt/12.0.0
+capnproto/1.1.0
+sdl/3.2.20
+assimp/5.4.3
+glm/1.0.1
+
+[generators]
+CMakeDeps
+CMakeToolchain
