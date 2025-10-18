@@ -67,8 +67,8 @@ elseif ("${CMAKE_BUILD_TYPE}" STREQUAL Debug)
 endif()
 
 # Force LLD
-add_link_options("-fuse-ld=lld")
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld=lld")
-set(CMAKE_MODULE_LINKER_FLAGS_INIT "-fuse-ld=lld")
-set(CMAKE_SHARED_LINKER_FLAGS_INIT "-fuse-ld=lld")
-target_link_options(musicvis PRIVATE "-fuse-ld=lld")
+# add_link_options("-fuse-ld=lld")
+# set(CMAKE_EXE_LINKER_FLAGS_INIT "-fuse-ld=lld")
+# set(CMAKE_MODULE_LINKER_FLAGS_INIT "-fuse-ld=lld")
+# set(CMAKE_SHARED_LINKER_FLAGS_INIT "-fuse-ld=lld")
+# target_link_options(musicvis PRIVATE "-fuse-ld=lld")
