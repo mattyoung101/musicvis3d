@@ -39,6 +39,13 @@ jobs:
         with:
           cache_packages: true
 
+      - name: Try and restore Conan cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            conan cache restore conan_cache_save.tgz
+          key: ${{ runner.os }}-conan-cache
+
       - name: Setup Conan profile
         run: conan profile detect --force
 
@@ -47,6 +54,15 @@ jobs:
 
       - name: Build deps
         run: just conan
+
+      - name: Generate Conan cache
+        run: conan cache save "*"
+
+      - name: Save Conan cache
+        uses: actions/cache/save@v4
+        with:
+          path: conan_cache_save.tgz
+          key: ${{ runner.os }}-conan-cache
 
       - name: Build
         run: just build
