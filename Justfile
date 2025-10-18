@@ -2,7 +2,7 @@ default:
     @just -l
 
 conan:
-    conan install . --output-folder=build --build=missing
+    conan install . --output-folder=build --build=missing -c tools.system.package_manager:mode=install
 
 cmake: conan
     cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
