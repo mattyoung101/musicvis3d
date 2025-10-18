@@ -1,8 +1,10 @@
 default:
     @just -l
 
+# very annoying SDL build quirk that stupidly uses -Werror, so we have to silence that here
 conan:
-    conan install . --output-folder=build --build=missing -c tools.system.package_manager:mode=install -c \
+    CFLAGS="-Wno-incompatible-pointer-types" CXXFLAGS="-Wno-incompatible-pointer-types" conan install . \
+        --output-folder=build --build=missing -c tools.system.package_manager:mode=install -c \
         tools.system.package_manager:sudo=True
 
 cmake: conan

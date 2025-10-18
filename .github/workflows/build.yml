@@ -10,6 +10,8 @@ jobs:
     env:
       CMAKE_CXX_COMPILER_LAUNCHER: ccache
       CMAKE_C_COMPILER_LAUNCHER: ccache
+      CC: clang-20
+      CXX: clang++20
     steps:
       - uses: actions/checkout@v5
 
@@ -48,9 +50,6 @@ jobs:
 
       - name: Build
         run: just build
-        env:
-          CC: clang-20
-          CXX: clang++-20
 
       - name: Archive artefacts
         uses: actions/upload-artifact@v4
