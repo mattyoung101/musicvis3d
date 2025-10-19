@@ -15,7 +15,8 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install base deps
-        run: sudo apt update; sudo apt install -y sudo wget lsb-release
+        run: sudo apt update; sudo apt install -y sudo wget lsb-release lsb-release wget
+          software-properties-common gnupg curl build-essential make
 
       - name: Install Clang
         run: cd /tmp;
