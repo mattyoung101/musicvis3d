@@ -16,7 +16,7 @@ jobs:
 
       - name: Install base deps
         run: sudo apt update; sudo apt install -y sudo wget lsb-release lsb-release wget
-          software-properties-common gnupg curl build-essential make
+          software-properties-common gnupg curl build-essential make python3 python3-dev python-is-python3
 
       - name: Install Clang
         run: cd /tmp;
