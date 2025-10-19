@@ -5,7 +5,7 @@ on:
 jobs:
   build:
     name: Build Conan
-    runs-on: [self-hosted, serpent]
+    runs-on: [self-hosted]
     env:
       CMAKE_CXX_COMPILER_LAUNCHER: ccache
       CMAKE_C_COMPILER_LAUNCHER: ccache
