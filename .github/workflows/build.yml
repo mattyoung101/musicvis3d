@@ -53,7 +53,8 @@ jobs:
         run: just conan
 
       - name: Upload deps
-        run: conan upload -r lagoon "*" --confirm
+        run: conan upload -v -r lagoon "*" --confirm
+        continue-on-error: true
 
       - name: Build
         run: just build
