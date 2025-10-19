@@ -1,0 +1,56 @@
+name: "Build Conan deps"
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Conan
+    runs-on: [self-hosted, serpent]
+    env:
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CC: /usr/lib/ccache/clang-20
+      CXX: /usr/lib/ccache/clang++-20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Clang
+        run: cd /tmp;
+          wget https://apt.llvm.org/llvm.sh;
+          chmod +x llvm.sh;
+          sudo ./llvm.sh 20
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          create-symlink: true
+
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '4.1.x'
+
+      - name: Install Just
+        uses: extractions/setup-just@v3
+
+      - name: Install Conan
+        uses: conan-io/setup-conan@v1
+        with:
+          cache_packages: true
+
+      - name: Setup Conan profile
+        run: conan profile detect --force
+
+      - name: Setup Conan remote
+        run: conan remote add lagoon https://conan.mlyoung.cool --force;
+          conan remote login lagoon ci -p ${{ secrets.CONAN_PASSWORD }}
+
+      - name: Install more system deps
+        run: sudo apt update; sudo apt install --yes clang ninja-build
+
+      - name: Build deps
+        run: just conan
+
+      - name: Upload deps
+        run: conan upload -v -r lagoon "*" --confirm
+        continue-on-error: true
