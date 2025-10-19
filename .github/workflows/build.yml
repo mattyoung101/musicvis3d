@@ -39,19 +39,12 @@ jobs:
         with:
           cache_packages: true
 
-      - name: Try and restore Conan cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            conan_cache_save.tgz
-          key: ${{ runner.os }}-conan-cache
-
-      - name: Perform Conan restore
-        run: conan cache restore conan_cache_save.tgz
-        continue-on-error: true # when it hasn't been found
-
       - name: Setup Conan profile
         run: conan profile detect --force
+
+      - name: Setup Conan remote
+        run: conan remote add lagoon https://conan.mlyoung.cool --force;
+          conan remote login lagoon ci -p ${{ secrets.CONAN_PASSWORD }}
 
       - name: Install more system deps
         run: sudo apt update; sudo apt install --yes clang ninja-build
@@ -59,14 +52,8 @@ jobs:
       - name: Build deps
         run: just conan
 
-      - name: Generate Conan cache
-        run: conan cache save "*"
-
-      - name: Save Conan cache
-        uses: actions/cache/save@v4
-        with:
-          path: conan_cache_save.tgz
-          key: ${{ runner.os }}-conan-cache
+      - name: Upload deps
+        run: conan upload -r lagoon "*" --confirm
 
       - name: Build
         run: just build
